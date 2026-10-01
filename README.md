@@ -1,4 +1,4 @@
-# AURA — The Music House / 0.4.1
+# AURA — The Music House / 0.4.2
 
 **[Try the live music house](https://aura-music-studio.rhythmx.chatgpt.site)** · **[Anis Chelli’s portfolio](https://anischelly26.github.io/treasure-hunter/)**
 
@@ -14,7 +14,7 @@ The [1 October ruthless audit](docs/audit-2026-10-01/AUDIT.md) documents reprodu
 
 After running `npm ci` and `npm run build`, double-click the generated **AURA.html**, or on Windows use **START_AURA.bat**. Three.js, styles, synthesis and all application code are bundled in that single file. No runtime network connection or paid API is needed. A current browser with WebGL2 renders the house. If graphics are unavailable, the precise production tools and room-tool index remain available.
 
-Arrival is silent unless you explicitly enable the optional note. Click Enter for the default 3.2-second live passage through the actual architecture, or Skip for immediate access. Settings also offer an 8.2-second arrival, reduced motion, or no arrival. Press Space to hear the original editable eight-bar starter.
+Arrival is silent unless you explicitly enable the optional note. Click Enter for the default 3.2-second live passage through the actual architecture, or Skip for immediate access. Settings also offer an 8.2-second arrival, reduced motion, or no arrival. Tap Listen (or press Space) to hear the original editable eight-bar starter. Audio starts from that gesture. On supported iPhones, AURA selects the music playback session so Silent Mode does not mute the instruments. After an audio interruption, tap Listen again; the transport resumes at its paused position. Older iOS versions without Audio Session support may still require turning off Silent Mode.
 
 Use the hosted version or localhost for microphone capture. Local-file persistence and microphone behavior vary by browser. Download an editable `.aura` project to keep an independent backup, including imported samples.
 
@@ -49,6 +49,8 @@ WASD or arrow keys walk, drag looks, and clicking an empty nearby floor sets a w
 On phones and tablets, hold and drag the **MOVE** circle to walk or strafe. Drag the scene with a second finger to look around while walking, then tap **Interact** to use the object at the center of your view or open the current room's tools. The Rooms button is available for guided travel. Touch controls use the same collision and movement smoothing as the keyboard, respect screen safe areas, and reset when canceled, resized, backgrounded, or covered by a music tool. Controls stay hidden during arrival, dialogs, production view and the graphics fallback. Published asset versions change with the bundle and styles so returning visitors receive the fix.
 
 The [mobile verification](docs/mobile-navigation/verification.json) exercises real Chromium touch input at 390×844, 320×568 and 844×390, simultaneous fingers, release/cancel, collisions, production mode, offline models and desktop keyboard movement. This is browser emulation; physical iOS/Android hardware performance remains unverified. After building, run `node tools/verify-mobile-navigation.cjs` with Playwright installed; `AURA_CHROMIUM_PATH` optionally selects Chromium.
+
+The [mobile audio verification](docs/mobile-audio/verification.json) measures real post-monitor samples after trusted taps for playback, piano, synth, drums and held notes; interruption/retry behavior; fake-device microphone capture; and nonzero WAV export. Autoplay restrictions stay enabled. iOS audio-session selection and interruption states use explicit browser fixtures; physical phone speaker output remains unverified. Run `node tools/verify-mobile-audio.cjs` after building, with Playwright installed and an optional `AURA_CHROMIUM_PATH`.
 
 Ctrl/Cmd+Enter switches between the house and precise Production view. Native Tab traverses controls; canvas-focused Tab also switches views. Each music room opens its relevant tools; navigation never creates another audio engine or restarts the song. When WebGL is unavailable, the room map opens those tools directly.
 

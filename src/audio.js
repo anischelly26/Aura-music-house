@@ -1,5 +1,6 @@
 import { buildRack } from "./effects.js";
 import { base64ToBytes } from "./storage.js";
+import { setAudioSession } from "./audio-session.js";
 export const frequency = (n) => 440 * 2 ** ((n - 69) / 12);
 export function projectBeats(p) {
   return Math.min(
@@ -418,8 +419,12 @@ export class AudioEngine extends EventTarget {
     this.worker = null;
   }
   async init(resume = true) {
+    // Keep this before any await: mobile browsers require the original tap.
+    if (resume) setAudioSession(this.captureActive ? "play-and-record" : "playback");
     if (!this.ctx) {
-      this.ctx = new AudioContext({ latencyHint: "interactive" });
+      const Context = globalThis.AudioContext || globalThis.webkitAudioContext;
+      if (!Context) throw Error("This browser does not support audio playback.");
+      this.ctx = new Context({ latencyHint: "interactive" });
       this.output = this.ctx.createGain();
       this.projectOutput = this.ctx.createGain();this.projectOutput.connect(this.output);
       this.monitorStereo=this.ctx.createGain();this.monitorMono=this.ctx.createGain();this.monitorPhone=this.ctx.createGain();
@@ -430,11 +435,34 @@ export class AudioEngine extends EventTarget {
       this.output.connect(hp).connect(lp).connect(this.monitorPhone).connect(this.ctx.destination);
       this.setMonitor(this.monitorMode||"stereo",true);
       this.ctx.onstatechange = () => {
-        if (this.ctx.state === "suspended" && this.playing) this.pause();
+        if (["suspended", "interrupted", "closed"].includes(this.ctx.state)) {
+          if (this.playing) this.pause();
+          for (const source of this.liveActive) { try { source.stop(); } catch {} }
+          this.liveActive.clear();
+        }
+        this.dispatchEvent(new Event("audiostate"));
       };
     }
-    if (resume) await this.ctx.resume();
+    if (resume) {
+      let timer;
+      try {
+        // A denied resume can remain pending indefinitely. Never claim playback
+        // succeeded while the audio clock is still stopped.
+        await Promise.race([
+          this.ctx.resume(),
+          new Promise((_, reject) => { timer = setTimeout(() => reject(Error("Sound is paused. Tap Listen or Play again to enable it.")), 3000); }),
+        ]);
+        if (this.ctx.state !== "running") throw Error("Sound is paused. Tap Listen or Play again to enable it.");
+      } finally {
+        clearTimeout(timer);
+        this.dispatchEvent(new Event("audiostate"));
+      }
+    }
     return this.ctx;
+  }
+  setCaptureActive(active) {
+    this.captureActive = active;
+    setAudioSession(active ? "play-and-record" : "playback");
   }
   async loadAssets(p) {
     const entries = Object.entries(p.assets || {});
@@ -452,7 +480,9 @@ export class AudioEngine extends EventTarget {
 
   async play(p, position = this.position) {
     if (this.playing) return;
+    const request = this.playRequest = (this.playRequest || 0) + 1;
     await this.init();
+    if (request !== this.playRequest || this.playing) return;
     this.p = p;
     this.position = Math.min(position, projectBeats(p) - 0.001);
     this.startBeat = this.position;
@@ -568,6 +598,7 @@ export class AudioEngine extends EventTarget {
     this.stop(false);
   }
   stop(reset = true) {
+    this.playRequest = (this.playRequest || 0) + 1;
     this.playing = false;
     this.nextLoop=null;
     const stopAt=this.ctx?this.ctx.currentTime+.015:0;

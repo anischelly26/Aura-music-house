@@ -1582,7 +1582,7 @@ function updateTransport() {
   $("#play").setAttribute("aria-label", engine.playing ? "Pause" : "Play");
   $("#audioState").textContent = engine.playing
     ? "ENGINE RUNNING"
-    : "ENGINE READY";
+    : engine.ctx && engine.ctx.state !== "running" ? "TAP PLAY FOR SOUND" : "ENGINE READY";
   if (engine.ctx) {
     $("#audioInfo").textContent =
       (engine.ctx.sampleRate / 1000).toFixed(1) + "K · LOCAL ENGINE";
@@ -1657,6 +1657,7 @@ function animate(now) {
   }
 }
 engine.addEventListener("transport", updateTransport);
+engine.addEventListener("audiostate", updateTransport);
 engine.addEventListener("error", (e) => toast(e.detail.message));
 $("#play").onclick = safe(togglePlay);
 $("#stop").onclick = () => {

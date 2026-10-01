@@ -1,0 +1,83 @@
+{
+  "browser": "153.0.8010.0",
+  "autoplay": "document-user-activation-required",
+  "viewport": "390x844",
+  "measurements": {
+    "phone listen": {
+      "peak": 0.3912245035171509,
+      "rms": 0.14385055639897348
+    },
+    "piano audition": {
+      "peak": 0.058661382645368576,
+      "rms": 0.03138872349113763
+    },
+    "synth audition": {
+      "peak": 0.05254991352558136,
+      "rms": 0.024581503816689942
+    },
+    "drum audition": {
+      "peak": 0.10223148763179779,
+      "rms": 0.06084829387320228
+    },
+    "held piano key": {
+      "peak": 0.08253645896911621,
+      "rms": 0.04568239130934001
+    },
+    "resume after interruption": {
+      "peak": 0.3959078788757324,
+      "rms": 0.1798005529765137
+    },
+    "retry blocked sound": {
+      "peak": 0.43404537439346313,
+      "rms": 0.18066169520224248
+    },
+    "iOS session fixture listen": {
+      "peak": 0.39041823148727417,
+      "rms": 0.13950353089231146
+    },
+    "microphone take": {
+      "duration": 0.84,
+      "peak": 1.044676661491394
+    },
+    "export master": {
+      "bytes": 5250464,
+      "peak": 0.6354131698608398
+    },
+    "portable phone": {
+      "peak": 0.3904224634170532,
+      "rms": 0.16740042064376795
+    },
+    "desktop": {
+      "peak": 0.3835802972316742,
+      "rms": 0.1445303125320535
+    }
+  },
+  "sessionChanges": [
+    "playback",
+    "play-and-record",
+    "play-and-record",
+    "play-and-record",
+    "playback",
+    "playback",
+    "playback",
+    "play-and-record",
+    "play-and-record",
+    "playback"
+  ],
+  "checks": [
+    "trusted touch starts playback from a suspended restored context",
+    "startup without user activation times out with a retry prompt",
+    "piano, synth, drums and held notes produce post-monitor samples",
+    "interrupted transport pauses and resumes from its position",
+    "resolved but blocked resume never claims playback",
+    "playback session selected for music; play-and-record for microphone",
+    "microphone denied and completed paths restore playback",
+    "WAV export contains nonzero PCM",
+    "portable file and desktop playback work"
+  ],
+  "limitations": [
+    "Chromium touch emulation; physical iPhone/Android speaker output remains unverified",
+    "iOS session and interrupted state use explicit fixtures; the audio rendering and microphone capture are native"
+  ],
+  "pageErrors": []
+}

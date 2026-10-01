@@ -1259,3 +1259,9 @@ body.houseMoving .houseTop,body.houseMoving .houseBottom {opacity:.2;}
  .productionMode #productionRoomLabel {gap:10px;flex-wrap:wrap;min-height:34px;height:auto;font-size:11px;}
  .productionMode #productionRoomLabel button {font-size:12px;min-height:30px;}
 }
+#houseSoundHelp {
+  font-size: .875rem;
+  line-height: 1.55;
+  color: #c9d2be;
+  margin-top: 20px;
+}

@@ -12,22 +12,24 @@ export class RecordingSession extends EventTarget {
     this.monitor = false;
   }
   async start() {
-    if (this.active || this.saving) return;
+    if (this.active || this.saving || this.starting) return;
     if (typeof MediaRecorder === "undefined")
       throw Error("This browser does not support microphone recording.");
     if (!navigator.mediaDevices?.getUserMedia)
       throw Error("Microphone capture requires localhost or an HTTPS page.");
-    await this.engine.init();
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        deviceId: this.deviceId ? { exact: this.deviceId } : undefined,
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-      },
-    });
-    this.stream = stream;
+    this.starting = true;
+    this.engine.setCaptureActive(true);
     try {
+      await this.engine.init();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: this.deviceId ? { exact: this.deviceId } : undefined,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
+      this.stream = stream;
       const ctx = this.engine.ctx;
       this.source = ctx.createMediaStreamSource(stream);
       this.gain = ctx.createGain();
@@ -69,6 +71,8 @@ export class RecordingSession extends EventTarget {
     } catch (e) {
       this.cleanup();
       throw e;
+    } finally {
+      this.starting = false;
     }
   }
   async stop() {
@@ -133,6 +137,7 @@ export class RecordingSession extends EventTarget {
     this.gain = null;
     this.analyser = null;
     this.destination = null;
+    this.engine.setCaptureActive(false);
   }
   async devices() {
     if (!navigator.mediaDevices?.enumerateDevices) return [];
