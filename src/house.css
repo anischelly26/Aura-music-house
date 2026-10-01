@@ -4,6 +4,38 @@
   --house-ink: #171e1b;
   --house-accent: #d4ba91;
 }
+.touchNavigation {position:absolute;left:max(20px,env(safe-area-inset-left));right:max(20px,env(safe-area-inset-right));bottom:calc(82px + env(safe-area-inset-bottom));display:flex;align-items:end;justify-content:space-between;gap:20px;pointer-events:none;}
+.touchNavigation[hidden] {display:none;}
+.touchMove {position:relative;flex-shrink:0;}
+.touchMoveLabel {display:block;text-align:center;margin-bottom:9px;font-size:10px;letter-spacing:2px;color:#e7dfcd;}
+#touchMovePad {position:relative;display:block;width:118px;height:118px;padding:0;border-radius:50%;border:1px solid #ded0b86b;background:#14241cdf;color:#dfd4bc;box-shadow:0 4px 24px #0004;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;pointer-events:auto;}
+#touchMovePad.active {border-color:#e4c795;background:#223b2ce8;}
+#touchMovePad:focus-visible,#touchInteract:focus-visible {outline:2px solid #e4c795;outline-offset:4px;}
+#touchMoveThumb {position:absolute;left:37px;top:37px;width:42px;height:42px;border-radius:50%;background:#e5d3ac;border:1px solid #f5e9cc;box-shadow:0 2px 12px #0005;pointer-events:none;}
+.touchCompass {position:absolute;font-size:16px;line-height:1;pointer-events:none;}
+.touchCompass--up {top:10px;left:50%;transform:translateX(-50%);}
+.touchCompass--down {bottom:10px;left:50%;transform:translateX(-50%);}
+.touchCompass--left {left:10px;top:50%;transform:translateY(-50%);}
+.touchCompass--right {right:10px;top:50%;transform:translateY(-50%);}
+.touchLook {max-width:175px;text-align:right;padding-bottom:5px;}
+.touchLook p {margin:0 0 12px;color:#eee6d7;font-size:12px;line-height:1.6;text-shadow:0 1px 6px #000;}
+#touchInteract {min-height:44px;padding:10px 16px;border:1px solid #ded0b86b;border-radius:4px;background:#14241cdf;color:#eee6d7;font-size:14px;}
+.houseTouch .roomEditorial {bottom:calc(244px + env(safe-area-inset-bottom));}
+.houseTouch .houseBottom {bottom:calc(18px + env(safe-area-inset-bottom));}
+.houseTouch .houseBottom .movementHint {display:none;}
+.houseTouch #interactionHint {bottom:calc(224px + env(safe-area-inset-bottom));left:auto;right:20px;transform:none;max-width:175px;min-width:0;flex-direction:column;gap:8px;}
+@media (max-height:650px) and (orientation:portrait) {
+  .houseTouch .roomEditorial h1 {font-size:28px;margin:8px 0;}
+  .houseTouch .roomEditorial p {font-size:13px;line-height:1.5;margin-bottom:14px;}
+}
+@media (max-height:520px) and (orientation:landscape) {
+  .houseTouch .roomEditorial {left:max(170px,calc(150px + env(safe-area-inset-left)));bottom:82px;max-width:calc(100% - 365px);}
+  .houseTouch .roomEditorial h1 {font-size:27px;margin:8px 0;}
+  .houseTouch .roomEditorial p,.houseTouch .roomEditorial>span,.houseTouch #interactionHint {display:none;}
+  .houseTouch .roomEditorial>button {min-width:0;min-height:44px;padding-bottom:5px;}
+  .houseTouch .touchNavigation {bottom:calc(60px + env(safe-area-inset-bottom));}
+  .houseTouch .houseBottom {bottom:calc(8px + env(safe-area-inset-bottom));}
+}
 #intro {
   display: none !important;
 }

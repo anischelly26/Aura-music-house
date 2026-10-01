@@ -1,0 +1,31 @@
+{
+  "forwardDistance": 2.996750232672852,
+  "simultaneousWalkAndLook": true,
+  "releaseStops": true,
+  "cancelStops": true,
+  "diagonalDistance": 2.99675023267284,
+  "collision": {
+    "walkable": true,
+    "z": 30.491739536617644
+  },
+  "dialogsSuspend": true,
+  "productionSuspends": true,
+  "orientationResets": true,
+  "viewports": [
+    [
+      390,
+      844
+    ],
+    [
+      320,
+      568
+    ],
+    [
+      844,
+      390
+    ]
+  ],
+  "portableTouch": true,
+  "desktopKeyboardDistance": 2.996750232672852,
+  "pageErrors": []
+}

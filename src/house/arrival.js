@@ -68,5 +68,6 @@ export class Arrival {
     this.house.setRoom('gallery');
     this.house.arrival = null;
     document.body.classList.remove('houseMoving');
+    this.house.touchControls.refresh();
   }
 }

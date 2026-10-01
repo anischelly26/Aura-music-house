@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#101116" />
     <meta
       name="description"
@@ -30,7 +30,7 @@
       <canvas
         id="world"
         tabindex="0"
-        aria-label="The Music House. WASD or arrow keys to walk, drag to look, E to interact. Room map and production mode are available by keyboard."
+        aria-label="The Music House. Use the thumb control or WASD and arrow keys to walk. Drag the scene to look, tap an object or press E to interact."
       ></canvas>
     </div>
     <div id="houseHud">
@@ -76,6 +76,22 @@
       <div id="recordIndicator" hidden>
         <span></span><b>RECORDING</b><output id="recordSeconds">0:00</output
         ><button id="quickRecordStop">Stop take</button>
+      </div>
+      <div id="touchNavigation" class="touchNavigation" hidden>
+        <div class="touchMove">
+          <span class="touchMoveLabel" aria-hidden="true">MOVE</span>
+          <button id="touchMovePad" type="button" aria-label="Walk: hold and drag toward the direction you want to move" aria-describedby="touchMoveHelp">
+            <span class="touchCompass touchCompass--up" aria-hidden="true">↑</span>
+            <span class="touchCompass touchCompass--left" aria-hidden="true">←</span>
+            <span class="touchCompass touchCompass--right" aria-hidden="true">→</span>
+            <span class="touchCompass touchCompass--down" aria-hidden="true">↓</span>
+            <span id="touchMoveThumb" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="touchLook">
+          <p id="touchMoveHelp">Hold the circle to walk.<br>Drag the scene to look.</p>
+          <button id="touchInteract" type="button">Interact ↗</button>
+        </div>
       </div>
     </div>
     <div id="arrival">

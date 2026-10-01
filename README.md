@@ -1,4 +1,4 @@
-# AURA — The Music House / 0.4.0
+# AURA — The Music House / 0.4.1
 
 **[Try the live music house](https://aura-music-studio.rhythmx.chatgpt.site)** · **[Anis Chelli’s portfolio](https://anischelly26.github.io/treasure-hunter/)**
 
@@ -44,6 +44,11 @@ Open http://localhost:3000. `npm test` runs 23 project, recipe, routing, phrase,
 | 9 | Export terrace | 16/24-bit WAV at 44.1/48 kHz, aligned track stems ZIP, standard MIDI and editable project |
 
 WASD or arrow keys walk, drag looks, and clicking an empty nearby floor sets a walking target. The explicit Mouse look button enables pointer lock; Escape releases it. E interacts with the focused object. Standard controller axes support walking and looking, with A for interaction; physical controller testing is still pending. M opens the room map. Room shortcuts use clearance-aware pathfinding through connected portals around the main furniture; Shift+room number or Shift+room-map click makes them immediate; reduced motion also uses instant travel. Speed, mouse sensitivity, movement response and field of view persist on this device.
+
+
+On phones and tablets, hold and drag the **MOVE** circle to walk or strafe. Drag the scene with a second finger to look around while walking, then tap **Interact** to use the object at the center of your view or open the current room's tools. The Rooms button is available for guided travel. Touch controls use the same collision and movement smoothing as the keyboard, respect screen safe areas, and reset when canceled, resized, backgrounded, or covered by a music tool. Controls stay hidden during arrival, dialogs, production view and the graphics fallback. Published asset versions change with the bundle and styles so returning visitors receive the fix.
+
+The [mobile verification](docs/mobile-navigation/verification.json) exercises real Chromium touch input at 390×844, 320×568 and 844×390, simultaneous fingers, release/cancel, collisions, production mode, offline models and desktop keyboard movement. This is browser emulation; physical iOS/Android hardware performance remains unverified. After building, run `node tools/verify-mobile-navigation.cjs` with Playwright installed; `AURA_CHROMIUM_PATH` optionally selects Chromium.
 
 Ctrl/Cmd+Enter switches between the house and precise Production view. Native Tab traverses controls; canvas-focused Tab also switches views. Each music room opens its relevant tools; navigation never creates another audio engine or restarts the song. When WebGL is unavailable, the room map opens those tools directly.
 

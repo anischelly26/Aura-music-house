@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { walkRoute } from "./navigation.js";
 import { Arrival } from "./arrival.js";
+import { TouchNavigation } from "./touch-navigation.js";
 import { Architecture } from "./architecture.js";
 import { ModelAssets } from './model-assets.js';
 import { rooms, roomById, roomAt, roomRoute } from "./layout.js";
@@ -122,6 +123,7 @@ export class MusicHouse {
     this.applyQuality();
     this.resize();
     this.bind();
+    this.touchControls = new TouchNavigation(this);
     this.updateProject();
     if(this.renderer){this.models=new ModelAssets(this);this.modelsReady=this.models.load();}
     this.studio.registerCommands(
@@ -134,8 +136,11 @@ export class MusicHouse {
     );
     this.studio.store.addEventListener("change", () => this.updateProject());
     window.addEventListener("resize", () => this.resize());
-    window.addEventListener("blur", () => this.keys.clear());
-    document.addEventListener("visibilitychange", () => this.keys.clear());
+    window.addEventListener("blur", () => this.resetNavigationInput());
+    document.addEventListener("visibilitychange", () => {
+      this.resetNavigationInput();
+      this.touchControls.refresh();
+    });
     $("#world").addEventListener("webglcontextlost", (e) => {
       e.preventDefault();
       this.fallback();
@@ -154,9 +159,15 @@ export class MusicHouse {
     this.lookPitch = this.pitch;
   }
   resize() {
-    this.camera.aspect = innerWidth / innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer?.setSize(innerWidth, innerHeight, false);
+    if (this.viewportWidth !== innerWidth || this.viewportHeight !== innerHeight) {
+      this.resetNavigationInput();
+      this.viewportWidth = innerWidth;
+      this.viewportHeight = innerHeight;
+      this.camera.aspect = innerWidth / innerHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer?.setSize(innerWidth, innerHeight, false);
+    }
+    this.touchControls?.refresh();
   }
   applyQuality() {
     this.scene.environment =
@@ -337,16 +348,16 @@ export class MusicHouse {
       ),
     );
     const canvas = $("#world");
+    const pointAt = e => this.pointer.set((e.clientX / innerWidth) * 2 - 1, (-e.clientY / innerHeight) * 2 + 1);
     canvas.onpointerdown = (e) => {
-      if (!this.entered || this.mode !== "house") return;
-      this.drag = { x: e.clientX, y: e.clientY, moved: 0 };
+      if (!this.entered || this.mode !== "house" || this.drag || document.querySelector('dialog[open]')) return;
+      pointAt(e);
+      this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0 };
       canvas.setPointerCapture(e.pointerId);
     };
     canvas.onpointermove = (e) => {
-      this.pointer.set(
-        (e.clientX / innerWidth) * 2 - 1,
-        (-e.clientY / innerHeight) * 2 + 1,
-      );
+      if (this.drag && this.drag.id !== e.pointerId) return;
+      pointAt(e);
       if (document.pointerLockElement === canvas) {
         this.rotate(e.movementX, e.movementY);
       } else if (this.drag) {
@@ -358,15 +369,21 @@ export class MusicHouse {
         this.rotate(dx, dy);
       }
     };
-    canvas.onpointerup = () => {
-      if (this.drag?.moved < 8) {
+    canvas.onpointerup = (e) => {
+      if (this.drag?.id !== e.pointerId) return;
+      pointAt(e);
+      if (this.drag.moved < 8 && this.touchControls.pointerId === null) {
+        this.camera.updateMatrixWorld();
         this.findInteraction();
         if (this.target) this.interact();
         else this.walkToPointer();
       }
       this.drag = null;
+      if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
     };
-    canvas.onpointercancel = () => (this.drag = null);
+    const cancelDrag = e => { if (this.drag?.id === e.pointerId) this.drag = null; };
+    canvas.onpointercancel = cancelDrag;
+    canvas.onlostpointercapture = cancelDrag;
   }
   enter(skip) {
     if (this.entered) return;
@@ -384,6 +401,7 @@ export class MusicHouse {
     if (skip || this.reduced) this.goRoom("gallery", true);
     else this.arrival = new Arrival(this, localStorage.getItem("aura-arrival-duration") !== "full");
     $("#world").focus();
+    this.touchControls.refresh();
   }
   async play() {
     const e = this.studio.engine;
@@ -392,9 +410,7 @@ export class MusicHouse {
   }
   openDialog(id) {
     document.exitPointerLock?.();
-    this.keys.clear();
-    this.journey=null;this.velocity.set(0,0);
-    this.walkTarget = null;
+    this.resetNavigationInput();
     const d = $("#" + id);
     for(const open of document.querySelectorAll('dialog[open]'))if(open!==d)open.close();
     if (!d.open) d.showModal();
@@ -444,14 +460,27 @@ export class MusicHouse {
       ].includes(e.code)
     ) {
       e.preventDefault();
-      if (this.journey?.speed && this.camera.position.z > 31)
-        this.goRoom("gallery", true);
-      this.arrival?.finish();
+      this.beginManualMove();
       this.keys.add(e.code);
-      this.journey = null;
-      this.walkTarget = null;
-      document.body.classList.remove("houseMoving");
     }
+  }
+  beginManualMove() {
+    if (this.journey?.speed && this.camera.position.z > 31) this.goRoom("gallery", true);
+    this.arrival?.finish();
+    this.journey = null;
+    this.walkTarget = null;
+    document.body.classList.remove("houseMoving");
+  }
+  resetNavigationInput() {
+    this.keys.clear();
+    this.touchControls?.reset();
+    const canvas = $("#world"), pointerId = this.drag?.id;
+    this.drag = null;
+    if (pointerId !== undefined && canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
+    this.journey = null;
+    this.walkTarget = null;
+    this.velocity.set(0, 0);
+    document.body.classList.remove("houseMoving");
   }
   rotate(dx, dy) {
     this.lookYaw -= dx * this.sensitivity;
@@ -484,9 +513,7 @@ export class MusicHouse {
     }
     this.returnHouse();
     this.arrival?.finish();
-    this.keys.clear();
-    this.velocity.set(0,0);
-    this.walkTarget = null;
+    this.resetNavigationInput();
     const view = views[id];
     if (this.reduced || instant) {
       this.camera.position.set(view[0], 1.72, view[1]);
@@ -535,8 +562,7 @@ export class MusicHouse {
   }
   production(room) {
     document.exitPointerLock?.();
-    this.keys.clear();
-    this.journey=null;this.velocity.set(0,0);
+    this.resetNavigationInput();
     this.mode = "production";
     document.body.classList.remove("houseMode");
     document.body.classList.add("productionMode");
@@ -544,6 +570,7 @@ export class MusicHouse {
     $("#productionRoomName").textContent = roomById(room).name.toUpperCase();
     $("#houseModeButton").innerHTML = "House view <kbd>Ctrl ↵</kbd>";
     this.studio.activate(room);
+    this.touchControls.refresh();
   }
   returnHouse() {
     if (!this.renderer) return this.openDialog("roomMap");
@@ -553,6 +580,7 @@ export class MusicHouse {
     document.body.dataset.room = this.currentRoom;
     $("#houseModeButton").innerHTML = "Production view <kbd>Ctrl ↵</kbd>";
     window.dispatchEvent(new Event("resize"));
+    this.touchControls.refresh();
   }
   async openTool(room) {
     if (room === "gallery") return this.studio.openHub();
@@ -823,6 +851,8 @@ export class MusicHouse {
       s =
         (this.keys.has("KeyD") || this.keys.has("ArrowRight") ? 1 : 0) -
         (this.keys.has("KeyA") || this.keys.has("ArrowLeft") ? 1 : 0);
+    f += this.touchControls.forward;
+    s += this.touchControls.strafe;
     for (const g of navigator.getGamepads?.() || []) {
       if (!g) continue;
       const axis = (v) => (Math.abs(v || 0) > 0.15 ? v : 0);
@@ -918,6 +948,7 @@ export class MusicHouse {
     this.renderer = null;
     this.entered = true;
     this.journey = null;
+    this.resetNavigationInput();
     $("#arrival").hidden = true;
     $("#houseFallback").hidden = false;
     this.production("arrange");
