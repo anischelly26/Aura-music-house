@@ -1,0 +1,1229 @@
+:root {
+  --house-paper: #eee6d7;
+  --house-muted: #b9b7a8;
+  --house-ink: #171e1b;
+  --house-accent: #d4ba91;
+}
+#intro {
+  display: none !important;
+}
+#houseWorld {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: #252b25;
+}
+#world {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  outline: none;
+  cursor: grab;
+}
+#world:active {
+  cursor: grabbing;
+}
+.houseMode .app {
+  position: fixed;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+.productionMode .app {
+  position: fixed;
+  inset: 62px 30px 38px;
+  z-index: 4;
+  height: auto;
+  box-shadow: 0 30px 90px #0008;
+  border: 1px solid #7f846045;
+  border-radius: 5px;
+  overflow: hidden;
+  animation: studioIn 0.25s ease;
+}
+.productionMode #houseWorld {
+  filter: blur(3px);
+  opacity: 0.45;
+}
+.productionMode #houseHud .roomEditorial,
+.productionMode #houseHud .houseBottom,
+.productionMode #interactionHint {
+  display: none;
+}
+.productionMode #houseTop {
+  opacity: 1;
+}
+#houseHud {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  color: var(--house-paper);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+#houseHud button,
+#houseHud input,
+#houseHud select {
+  pointer-events: auto;
+}
+.houseTop {
+  height: 80px;
+  padding: 27px 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(#13201850, transparent);
+}
+.houseBrand {
+  display: flex;
+  gap: 19px;
+  align-items: center;
+  font-size: 15px;
+  letter-spacing: 3px;
+  font-weight: 500;
+  padding: 0;
+  text-shadow: 0 2px 20px #0005;
+}
+.houseBrand span {
+  font-size: 7px;
+  font-weight: 400;
+  letter-spacing: 2.6px;
+  border-left: 1px solid #e8e4cc50;
+  padding-left: 18px;
+}
+.houseTopRight {
+  display: flex;
+  gap: 21px;
+  align-items: center;
+  font-size: 10px;
+}
+.houseTopRight > span {
+  color: #e9e3ce90;
+  font-size: 10px;
+  margin-right: 10px;
+}
+.houseTopRight button {
+  color: var(--house-paper);
+  font-size: 10px;
+  padding: 8px 0;
+}
+.houseTopRight kbd,
+.houseBottom kbd,
+#productionRoomLabel kbd {
+  background: #15261b40;
+  border: 1px solid #d6d0b029;
+  color: #d5d0bb;
+  margin-left: 7px;
+  font-size: 7px;
+  padding: 2px 4px;
+}
+.roomEditorial {
+  position: absolute;
+  left: 42px;
+  bottom: 119px;
+  max-width: 500px;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 10px #0004);
+  transition: opacity 0.3s;
+}
+.roomEditorial > span {
+  font-size: 8px;
+  letter-spacing: 2.3px;
+  color: #d6c7a6;
+}
+.roomEditorial h1 {
+  font:
+    400 47px Georgia,
+    "Times New Roman",
+    serif;
+  letter-spacing: -1.7px;
+  margin: 13px 0;
+  color: #f2ebdc;
+}
+.roomEditorial p {
+  font-size: 11px;
+  color: #d1cdbb;
+  line-height: 1.8;
+  margin: 0 0 22px;
+}
+.roomEditorial > button {
+  font-size: 10px;
+  border-bottom: 1px solid #c4b58c70;
+  padding: 0 0 9px;
+  border-radius: 0;
+  text-align: left;
+  min-width: 220px;
+}
+.roomEditorial > button span {
+  float: right;
+  margin-left: 25px;
+}
+.houseBottom {
+  position: absolute;
+  bottom: 25px;
+  left: 40px;
+  right: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+.houseBottom > div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.houseBottom button {
+  font-size: 10px;
+  color: var(--house-paper);
+  padding: 7px 3px;
+}
+.houseBottom button#housePlay {
+  font-size: 13px;
+}
+.houseBottom button#housePlay span {
+  font-size: 10px;
+  margin-left: 8px;
+}
+.houseBottom > div > span {
+  font-size: 8px;
+  color: #d0c9b2;
+  font-variant-numeric: tabular-nums;
+}
+.houseBottom .monitorStatus {
+  font-size: 6px;
+  letter-spacing: 1.5px;
+  border-left: 1px solid #cac3a64a;
+  padding-left: 16px;
+  color: #a6b49c;
+}
+.movementHint {
+  font-size: 7px;
+  color: #d1cfb8;
+  letter-spacing: 1px;
+}
+.movementHint span {
+  font-size: 7px;
+  color: #969f92;
+  margin-left: -9px;
+  letter-spacing: 0;
+}
+.movementHint button {
+  font-size: 8px !important;
+  color: #c0c5b1 !important;
+}
+.movementHint #houseLock {
+  border-bottom: 1px solid #bfc8ad50;
+  border-radius: 0;
+}
+#interactionHint {
+  position: absolute;
+  left: 50%;
+  bottom: 115px;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 22px;
+  padding: 11px 18px;
+  background: #1a231b80;
+  border: 1px solid #d1c09730;
+  backdrop-filter: blur(12px);
+  border-radius: 3px;
+  pointer-events: auto;
+  min-width: 200px;
+}
+#interactionHint:not([hidden]) {
+  display: flex;
+}
+#interactionName {
+  font-size: 10px;
+  color: #dfd9c6;
+}
+#interactButton {
+  font-size: 8px;
+  white-space: nowrap;
+  color: #cfc7ad;
+}
+#interactButton kbd {
+  margin-left: 7px;
+  background: #ffffff10;
+  font-size: 7px;
+}
+#arrival {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 9vw;
+  background: linear-gradient(90deg, #122018ab 0%, #1521173d 55%, transparent);
+  color: var(--house-paper);
+  transition:
+    opacity 0.6s,
+    visibility 0.6s;
+}
+#arrival.departed {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.arrivalEyebrow {
+  font-size: 8px;
+  letter-spacing: 2.7px;
+  color: #cec5a5;
+}
+#arrival h1 {
+  font:
+    400 68px Georgia,
+    serif;
+  letter-spacing: -3px;
+  line-height: 1.03;
+  margin: 28px 0 22px;
+}
+#arrival p {
+  font-size: 12px;
+  color: #c7c6b2;
+  margin: 0 0 33px;
+}
+#arrival > div {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+#arrival button#enterHouse {
+  background: #ddcba8;
+  color: #203026;
+  font-size: 11px;
+  padding: 14px 19px;
+  border-radius: 2px;
+  min-width: 188px;
+  text-align: left;
+}
+#enterHouse span {
+  float: right;
+  font-size: 15px;
+  margin-left: 25px;
+}
+#skipArrival {
+  font-size: 9px;
+  color: #c6c9b5;
+}
+#arrival label {
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #b1b79e;
+  margin-top: 25px;
+}
+#arrival input {
+  accent-color: #bfa572;
+}
+#arrival small {
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #85947c;
+  margin-top: 65px;
+}
+#houseFallback {
+  position: fixed;
+  bottom: 2px;
+  left: 5px;
+  z-index: 20;
+  font-size: 9px;
+  color: #cbbb93;
+}
+#productionRoomLabel {
+  display: none;
+  position: fixed;
+  z-index: 6;
+  left: 30px;
+  right: 30px;
+  bottom: 10px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 8px;
+  color: #ccc7b2;
+  letter-spacing: 1.8px;
+}
+.productionMode #productionRoomLabel {
+  display: flex;
+}
+#productionRoomLabel button {
+  font-size: 9px;
+  letter-spacing: 0;
+  padding: 3px 0;
+}
+.productionMode #houseHud .houseTop {
+  padding: 14px 31px;
+  height: 52px;
+}
+.productionMode #houseProject {
+  display: none;
+}
+#recordIndicator {
+  position: fixed;
+  left: 50%;
+  top: 27px;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  border: 1px solid #b0756350;
+  background: #26312cb0;
+  border-radius: 3px;
+  pointer-events: auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 8px;
+  color: #e8c9ba;
+}
+#recordIndicator:not([hidden]) {
+  display: flex;
+}
+#recordIndicator > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #de9173;
+}
+#recordIndicator b {
+  font-size: 7px;
+  letter-spacing: 1.2px;
+  font-weight: 400;
+}
+#recordIndicator button {
+  font-size: 7px;
+  padding: 2px 5px;
+  color: #e8c9ba;
+}
+#recordIndicator output {
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+}
+#roomMap,
+#houseSettings,
+#ideaPanel,
+#recordPanel,
+#masterPanel,
+#exportPanel,
+#memoryPanel {
+  background: #202a24;
+  color: #e6dcc8;
+  border: 1px solid #74816b80;
+  border-radius: 4px;
+  box-shadow: 0 30px 130px #0008;
+  width: 630px;
+  padding: 0 30px 27px;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+#roomMap {
+  width: 780px;
+}
+#roomMap::backdrop,
+#houseSettings::backdrop,
+#ideaPanel::backdrop,
+#recordPanel::backdrop,
+#masterPanel::backdrop,
+#exportPanel::backdrop,
+#memoryPanel::backdrop {
+  background: #17231873;
+  backdrop-filter: blur(9px);
+}
+.houseDialogHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #69735e40;
+  padding: 20px 0;
+  font-size: 8px;
+  letter-spacing: 1.7px;
+  color: #b2b59b;
+}
+.houseDialogHead button {
+  font-size: 19px;
+  line-height: 1;
+  color: #b2b59b;
+  padding: 0 5px;
+}
+#roomMap h2,
+#houseSettings h2,
+#ideaPanel h2,
+#recordPanel h2,
+#masterPanel h2,
+#exportPanel h2,
+#memoryPanel h2 {
+  font:
+    400 31px Georgia,
+    serif;
+  letter-spacing: -0.8px;
+  margin: 27px 0 20px;
+  color: #e8ddc6;
+}
+#roomMap > p,
+#ideaPanel > p,
+#recordPanel > p,
+#masterPanel > p,
+#exportPanel > p,
+#memoryPanel > p {
+  font-size: 10px;
+  line-height: 1.9;
+  color: #a5ae99;
+}
+#roomGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin: 22px 0;
+}
+#roomGrid button {
+  text-align: left;
+  border: 1px solid #6c75614a;
+  padding: 18px 17px;
+  border-radius: 2px;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  background: #ffffff02;
+}
+#roomGrid button.current {
+  border-color: #bcaa7c9a;
+  background: #d4ba9110;
+}
+#roomGrid small {
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #a0aa91;
+}
+#roomGrid strong {
+  font-weight: 400;
+  font:
+    18px Georgia,
+    serif;
+  color: #ddd1b7;
+}
+#roomGrid span {
+  font-size: 8px;
+  color: #819177;
+}
+.houseSetting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 11px;
+  border-bottom: 1px solid #7a83673b;
+  padding: 22px 0;
+  color: #d7ceb7;
+}
+.houseSetting small {
+  display: block;
+  font-size: 9px;
+  color: #879a7c;
+  line-height: 1.8;
+  margin-top: 5px;
+}
+.houseSetting select,
+#recordDevice {
+  border: 1px solid #8a92724a;
+  border-radius: 2px;
+  padding: 8px 10px;
+  font-size: 10px;
+  background: #26352a;
+  color: #d5cead;
+  min-width: 132px;
+}
+.houseSetting input[type="range"] {
+  max-width: 160px;
+  accent-color: #c7b487;
+  background: #6b755952;
+}
+.houseSetting input[type="range"]::-webkit-slider-thumb {
+  background: #cab58c;
+}
+.houseSetting input[type="checkbox"] {
+  accent-color: #c2ac81;
+}
+.houseNote {
+  font-size: 9px !important;
+  line-height: 1.9;
+  color: #899d7f !important;
+  margin: 20px 0 0;
+}
+.housePrimary,
+#createFoundation {
+  background: #c8b48e;
+  color: #203023;
+  border: 1px solid #ccb993;
+  border-radius: 2px;
+  padding: 12px 15px;
+  font-size: 10px;
+  margin: 17px 12px 5px 0;
+}
+.housePrimary:hover,
+#createFoundation:hover {
+  background: #decdab;
+  color: #1b291c;
+}
+#ideaText {
+  resize: vertical;
+  min-height: 90px;
+  width: 100%;
+  border: 1px solid #64735770;
+  background: #18251c;
+  outline: 0;
+  padding: 15px;
+  color: #d9d1b8;
+  font:
+    11px/1.8 "Segoe UI",
+    sans-serif;
+  border-radius: 2px;
+  margin-top: 12px;
+}
+#ideaText:focus {
+  border-color: #b4a06a;
+}
+.ideaChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.ideaChoices button:not(#createFoundation) {
+  font-size: 9px;
+  border-bottom: 1px solid #73826660;
+  color: #b0bea1;
+  border-radius: 0;
+  padding: 6px 0;
+  margin: 10px;
+}
+#recordWave {
+  width: 100%;
+  height: 130px;
+  border-bottom: 1px solid #74855e60;
+  margin-top: 15px;
+  background: #1a251e;
+}
+.recordActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 20px;
+}
+.recordActions button {
+  padding: 11px 14px;
+  border: 1px solid #93a27c60;
+  font-size: 10px;
+  color: #c9d0b5;
+  border-radius: 2px;
+}
+.recordActions #beginRecording {
+  color: #e0b393;
+  border-color: #ba90706b;
+  background: #bd92750b;
+}
+.recordActions output {
+  margin-left: auto;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: #a2b88d;
+}
+.masterReadouts {
+  display: flex;
+  gap: 45px;
+  padding: 25px 0;
+  border-top: 1px solid #61764c55;
+  border-bottom: 1px solid #61764c55;
+}
+.masterReadouts > div {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 8px;
+}
+.masterReadouts span {
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  color: #879d75;
+  grid-column: 1/-1;
+  margin-bottom: 10px;
+}
+.masterReadouts strong {
+  font:
+    400 40px Georgia,
+    serif;
+  color: #d8cbb1;
+  font-variant-numeric: tabular-nums;
+}
+.masterReadouts small {
+  font-size: 8px;
+  color: #829673;
+}
+.exportFormat {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  padding: 23px 0;
+  margin: 18px 0;
+  border-top: 1px solid #647a5050;
+  border-bottom: 1px solid #647a5050;
+  font:
+    26px Georgia,
+    serif;
+}
+.exportFormat span {
+  font:
+    8px "Segoe UI",
+    sans-serif;
+  letter-spacing: 1.5px;
+  color: #a2b490;
+}
+.exportFormat span:last-child {
+  margin-left: auto;
+  letter-spacing: 0.5px;
+}
+#memoryName {
+  border: 1px solid #61775170;
+  background: #18251b;
+  color: #d3c5a8;
+  padding: 12px;
+  font-size: 11px;
+  width: 60%;
+  margin: 12px 0;
+}
+#memoryList {
+  margin-top: 18px;
+}
+.memoryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  border-top: 1px solid #62765150;
+  padding: 16px 0;
+}
+.memoryRow strong {
+  font-weight: 400;
+  font-size: 11px;
+  color: #c8bca2;
+}
+.memoryRow small {
+  font-size: 8px;
+  color: #91a680;
+}
+.houseMode dialog {
+  z-index: 20;
+}
+.productionMode[data-room="instrument"] .arrangement,
+.productionMode[data-room="rhythm"] .arrangement {
+  display: none;
+}
+.productionMode[data-room="instrument"] .arrangeToolbar,
+.productionMode[data-room="rhythm"] .arrangeToolbar {
+  display: none;
+}
+.productionMode[data-room="instrument"] .editor,
+.productionMode[data-room="rhythm"] .editor {
+  flex: 1;
+  height: auto;
+}
+.productionMode[data-room="instrument"] .pianoLayout {
+  min-height: 375px;
+}
+.productionMode[data-room="instrument"] #piano,
+.productionMode[data-room="instrument"] .key {
+  --note-height: 20px;
+}
+.productionMode[data-room="living"] .arrangement,
+.productionMode[data-room="living"] .arrangeToolbar {
+  display: none;
+}
+.productionMode[data-room="living"] .editor {
+  flex: 1;
+  height: auto;
+}
+.productionMode[data-room="living"] .channelFader {
+  height: 260px;
+  margin-top: 20px;
+}
+.productionMode[data-room="living"] .channelFader input,
+.productionMode[data-room="living"] .channelMeter {
+  height: 250px;
+}
+.productionMode[data-room="living"] .channel {
+  width: 116px;
+  min-width: 116px;
+}
+.productionMode[data-room="arrange"] .editor {
+  height: 180px;
+}
+.productionMode[data-room="arrange"] .editorTabs {
+  height: 33px;
+}
+.productionMode .workspaceNav .workspaceLabel {
+  font-size: 7px;
+}
+.productionMode .menubar {
+  background: #181f1b;
+}
+.productionMode .transport {
+  background: #1b241e;
+}
+.productionMode .timeSig { flex-shrink: 0; }
+.productionMode .timeSig strong { white-space: nowrap; }
+.productionMode .browser,
+.productionMode .inspector {
+  background: #1a221d;
+}
+.productionMode .center,
+.productionMode .editor,
+.productionMode .timelineViewport {
+  background: #141d18;
+}
+.productionMode .trackHeaders,
+.productionMode .editorTabs,
+.productionMode .editorToolbar {
+  background: #20291f;
+}
+.productionMode .menubar .export {
+  background: #c1a67615;
+  color: #ddc696;
+  border-color: #8b7e574d;
+}
+.productionMode .transportControls .play {
+  background: #d0b991;
+}
+.productionMode .channel {
+  background: #1c261e;
+}
+.productionMode .trackRow {
+  border-bottom-color: #74806128;
+}
+.productionMode .workspaceNav {
+  background: #1a251d;
+}
+.productionMode .app {
+  --accent: #c8b48e;
+  --line: #5560444d;
+  --bg: #182219;
+  --muted: #93a184;
+}
+.productionMode .houseTopRight > button {
+  font-size: 9px;
+}
+.locked #world {
+  cursor: none;
+}
+.locked:after {
+  content: "";
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #f0e3c670;
+  z-index: 5;
+  pointer-events: none;
+}
+#toast {
+  z-index: 50;
+  background: #2d392a;
+  border-color: #89966c60;
+  color: #ded5bc;
+}
+#houseModeButton:focus-visible,
+#roomWorkButton:focus-visible,
+#houseMapButton:focus-visible {
+  outline: 1px solid #d6c499;
+  outline-offset: 6px;
+}
+.houseMoving .roomEditorial {
+  opacity: 0;
+}
+.houseNoMotion *,
+.houseNoMotion *:before {
+  animation: none !important;
+  transition: none !important;
+}
+@keyframes studioIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 950px) {
+  .houseTop {
+    padding: 25px;
+  }
+  .houseTopRight {
+    gap: 15px;
+  }
+  .houseTopRight > span {
+    display: none;
+  }
+  .houseBrand span {
+    font-size: 6px;
+    letter-spacing: 1.5px;
+  }
+  .houseBottom {
+    left: 25px;
+    right: 25px;
+  }
+  .houseBottom .movementHint {
+    gap: 10px;
+  }
+  .houseBottom .monitorStatus {
+    display: none;
+  }
+  .roomEditorial {
+    left: 28px;
+    bottom: 125px;
+  }
+  .roomEditorial h1 {
+    font-size: 40px;
+  }
+  .productionMode .app {
+    inset: 58px 10px 35px;
+  }
+  .productionMode #productionRoomLabel {
+    left: 12px;
+    right: 12px;
+  }
+  .houseBottom #houseLock {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .houseTop {
+    padding: 22px 18px;
+  }
+  .houseBrand {
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+  .houseBrand span {
+    display: none;
+  }
+  .houseTopRight {
+    gap: 15px;
+  }
+  .houseTopRight button {
+    font-size: 9px;
+  }
+  #houseSettingsButton {
+    display: none;
+  }
+  .houseTopRight kbd {
+    display: none;
+  }
+  .roomEditorial {
+    left: 23px;
+    bottom: 130px;
+    right: 23px;
+  }
+  .roomEditorial h1 {
+    font-size: 35px;
+    letter-spacing: -1px;
+  }
+  .roomEditorial p {
+    font-size: 10px;
+    max-width: 280px;
+  }
+  .roomEditorial > span {
+    font-size: 6px;
+    letter-spacing: 1.5px;
+  }
+  .roomEditorial > button {
+    min-width: 200px;
+    font-size: 9px;
+  }
+  .houseBottom {
+    left: 22px;
+    right: 22px;
+    bottom: 25px;
+    align-items: flex-end;
+  }
+  .houseBottom > div {
+    gap: 11px;
+  }
+  .houseBottom .movementHint {
+    font-size: 0;
+    gap: 0;
+  }
+  .houseBottom .movementHint span,
+  .houseBottom #houseLock {
+    display: none;
+  }
+  .houseBottom #houseCommand {
+    font-size: 0 !important;
+  }
+  .houseBottom #houseCommand kbd {
+    font-size: 7px;
+  }
+  #arrival {
+    padding: 0 25px;
+    background: linear-gradient(90deg, #142018a0, #14201825);
+  }
+  #arrival h1 {
+    font-size: 53px;
+    letter-spacing: -2px;
+  }
+  .arrivalEyebrow {
+    font-size: 6px;
+    letter-spacing: 1.4px;
+  }
+  #arrival p {
+    font-size: 11px;
+  }
+  #arrival > div {
+    gap: 10px;
+  }
+  #arrival small {
+    margin-top: 45px;
+    font-size: 6px;
+  }
+  .productionMode .app {
+    inset: 53px 0 30px;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+  .productionMode .houseTop {
+    padding: 14px 13px;
+  }
+  #roomMap,
+  #houseSettings,
+  #ideaPanel,
+  #recordPanel,
+  #masterPanel,
+  #exportPanel,
+  #memoryPanel {
+    width: 94vw;
+    padding: 0 20px 24px;
+  }
+  #roomMap h2,
+  #houseSettings h2,
+  #ideaPanel h2,
+  #recordPanel h2,
+  #masterPanel h2,
+  #exportPanel h2,
+  #memoryPanel h2 {
+    font-size: 27px;
+  }
+  #roomGrid {
+    gap: 5px;
+  }
+  #roomGrid button {
+    padding: 12px 9px;
+    min-height: 90px;
+  }
+  #roomGrid strong {
+    font-size: 15px;
+  }
+  #roomGrid span {
+    font-size: 7px;
+  }
+  #roomGrid small {
+    font-size: 6px;
+  }
+  .houseSetting {
+    font-size: 10px;
+  }
+  .houseSetting small {
+    max-width: 150px;
+    font-size: 8px;
+  }
+  .houseSetting select {
+    font-size: 9px;
+    min-width: 120px;
+  }
+  #interactionHint {
+    bottom: 80px;
+    max-width: 90vw;
+    padding: 8px 12px;
+  }
+  .masterReadouts {
+    gap: 20px;
+  }
+  .masterReadouts strong {
+    font-size: 32px;
+  }
+  .exportFormat {
+    gap: 15px;
+  }
+  .exportFormat span {
+    font-size: 7px;
+  }
+  .recordActions button {
+    font-size: 9px;
+    padding: 9px;
+  }
+  .productionMode[data-room="living"] .channel {
+    min-width: 92px;
+    width: 92px;
+  }
+  .productionMode[data-room="living"] .channelFader,
+  .productionMode[data-room="living"] .channelMeter,
+  .productionMode[data-room="living"] .channelFader input {
+    height: 160px;
+  }
+}
+#arrival[hidden] {
+  display: none;
+}
+#houseFallback[hidden] {
+  display: none;
+}
+.memoryVersion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  border-top: 1px solid #62765150;
+  padding: 16px 0;
+  gap: 16px;
+}
+.memoryVersion strong {
+  font-weight: 400;
+  font-size: 11px;
+  color: #c8bca2;
+}
+.memoryVersion small {
+  font-size: 8px;
+  color: #91a680;
+}
+#roomGrid button.active {
+  border-color: #bcaa7c9a;
+  background: #d4ba9110;
+}
+.productionMode .app {
+  visibility: visible;
+  pointer-events: auto;
+  opacity: 1;
+  animation: none;
+}
+.productionMode #interactionHint:not([hidden]) {
+  display: none;
+}
+.productionMode #houseWorld {
+  opacity: 0.3;
+  visibility: hidden;
+}
+#houseWorld:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    0deg,
+    #101d16f2,
+    #101d1699 24%,
+    transparent 46%,
+    transparent 78%,
+    #17251bd9
+  );
+}
+body:has(#arrival:not([hidden])) .roomEditorial,
+body:has(#arrival:not([hidden])) .houseBottom {
+  visibility: hidden;
+}
+.productionMode .play {
+  background: #c8b48e !important;
+}
+.productionMode .editorTab.active,
+.productionMode .workspaceNav button.active {
+  color: #d4bf98;
+  background: #c8b48e15;
+}
+.productionMode .editorToolbar button,
+.productionMode .commandButton,
+.productionMode .menubar .export {
+  color: #d0c2a3;
+}
+.productionMode .pianoLayout,
+.productionMode .key {
+  background: #1a231e;
+}
+.productionMode .inspectorLabel,
+.productionMode .sectionLabel {
+  color: #aeb298;
+}
+/* v0.3: legible studio tools and a live arrival passage. */
+.cinematicArrival {position:fixed;inset:0;z-index:100;pointer-events:none;}
+.arrivalVeil {position:absolute;inset:0;background:#07100b;}
+.cinematicMark {position:absolute;inset:32% 0 auto;display:flex;align-items:center;flex-direction:column;color:#f0e9d9;opacity:0;text-shadow:0 3px 40px #08100b;}
+.cinematicMark>span {font:300 clamp(54px,8vw,120px) Georgia,serif;letter-spacing:.38em;padding-left:.38em;}
+.cinematicMark small {font:12px Arial,sans-serif;letter-spacing:.28em;margin-top:18px;}
+.skipCinematic {position:absolute;right:32px;bottom:30px;pointer-events:auto;border:1px solid #dcccb55e;background:#132119d9;color:#ede4d3;padding:12px 18px;border-radius:4px;font-size:14px;}
+.cinematicArrival:before,.cinematicArrival:after {content:'';position:absolute;left:0;right:0;height:5.5vh;background:#0a130ef2;}
+.cinematicArrival:before {top:0;}.cinematicArrival:after {bottom:0;}
+body.houseMoving .houseTop,body.houseMoving .houseBottom {opacity:.2;}
+.houseTopRight button,.houseBottom button,#roomWorkButton,#interactButton {font-size:14px;}
+.houseTopRight kbd,.houseBottom kbd,#interactButton kbd {font-size:12px;}
+#roomEyebrow,.houseBrand span,.movementHint {font-size:12px;}
+#roomDescription {font-size:16px;line-height:1.6;}
+.houseSetting {font-size:14px;}.houseSetting small,.houseNote {font-size:12px;line-height:1.6;}
+.houseTopRight {gap:8px;}.houseTopRight #houseProject {font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#productionWorkbenchButton {margin-left:auto;border:1px solid #5d7466;background:#243b2d;color:#e5dcca;padding:6px 14px;border-radius:3px;font-size:13px;}
+.drumGrid {overflow:auto;max-height:calc(100% - 42px);}.drumRow {min-height:36px;}.drumRow>button:first-child {font-size:12px;min-width:95px;}
+.workbench {width:min(1080px,calc(100vw - 48px));max-height:calc(100dvh - 48px);padding:0;background:#eee9df;color:#21362a;border:1px solid #b1b6a2;border-radius:8px;box-shadow:0 24px 100px #00130970;overflow:hidden;}
+.workbench::backdrop {background:#091710c7;backdrop-filter:blur(6px);}
+.workbench button,.workbench select,.workbench input {font:14px Arial,sans-serif;}
+.workbench button {color:#294232;border:1px solid #a5ae9f;background:#f6f3eb;min-height:36px;padding:8px 13px;border-radius:4px;cursor:pointer;}
+.workbench button:hover {background:#d8dfce;border-color:#6b8372;}.workbench button:disabled {opacity:.4;cursor:default;}
+.workbench button.active {background:#25402e;color:#f0ead9;border-color:#25402e;}
+.workbench input:not([type=range]):not([type=checkbox]):not([type=file]),.workbench select {background:#f8f5ef;color:#233a2b;border:1px solid #a7b3a2;border-radius:4px;min-height:36px;padding:7px 9px;max-width:100%;}
+.workbench input[type=range] {width:100%;accent-color:#526f51;}.workbench input[type=checkbox] {accent-color:#526f51;}
+.wbHeader {display:flex;align-items:center;justify-content:space-between;padding:24px 28px 20px;border-bottom:1px solid #cad0c1;background:#e5e7dc;}
+.wbHeader small {font-size:12px;letter-spacing:.15em;color:#5d6d58;}.wbHeader h2 {font:32px Georgia,serif;margin:7px 0 0;}.wbHeader button {font-size:24px;border:0;background:transparent;}
+.wbTabs {display:flex;overflow:auto;padding:12px 22px 0;background:#e5e7dc;gap:5px;}.wbTabs button {white-space:nowrap;border:0;border-radius:4px 4px 0 0;min-height:42px;background:transparent;}
+.wbContext {display:flex;gap:20px;align-items:center;padding:14px 28px;border-bottom:1px solid #c5cbbc;font-size:13px;color:#5c6b54;}.wbContext label {display:flex;gap:10px;align-items:center;}.wbContext select {max-width:230px;}
+.wbBody {padding:24px 28px;overflow:auto;max-height:calc(100dvh - 315px);min-height:280px;}
+.wbBody h3 {font:24px Georgia,serif;font-weight:400;margin:0 0 12px;}.wbBody h4 {font-size:14px;font-weight:600;margin:18px 0 6px;}.wbBody p {font-size:14px;line-height:1.7;margin:8px 0 18px;max-width:60ch;}
+.wbTwo {display:grid;grid-template-columns:1fr 1fr;gap:32px;}.wbTwo>section+section {border-left:1px solid #c9d0c0;padding-left:28px;}
+.wbControl {display:block;margin:18px 0;font-size:14px;}.wbControl>span {display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}.wbControl output {color:#65765e;font-size:13px;font-variant-numeric:tabular-nums;}
+.wbSelect {display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px;margin:18px 0;}.wbSelect select {max-width:70%;}
+.wbVoiceGrid {display:grid;grid-template-columns:1fr 1fr;gap:8px;}.wbVoiceGrid button {text-align:left;padding:12px;}.wbVoiceGrid strong {display:block;font-size:13px;font-weight:500;}.wbVoiceGrid small {display:block;font-size:12px;color:#76816b;margin-top:5px;}
+.wbChainIntro {display:flex;align-items:center;gap:12px;margin-bottom:16px;}.wbChainIntro>div {flex:1;}.wbChainIntro p {margin-bottom:0;}.wbChainIntro select {max-width:180px;}
+.wbEffect {border:1px solid #bfc9b6;border-radius:5px;margin-bottom:14px;padding:16px;background:#e6ebdf;}.wbEffect header {display:flex;align-items:center;gap:12px;font-size:13px;}.wbEffect header strong {flex:1;font-size:15px;font-weight:500;}.wbEffect header button {min-height:30px;padding:5px 9px;font-size:12px;}.wbEffectParams {display:grid;grid-template-columns:repeat(3,1fr);gap:0 24px;}.wbEffectParams .wbControl {margin-bottom:0;}
+.wbPreset {display:flex;gap:8px;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid #c6cfc0;}.wbPreset input {flex:1;min-width:150px;}.wbPreset select {max-width:200px;}
+.wbActions {display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;}.wbChords {display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}.wbChords button {font:24px Georgia,serif;padding:16px;}.wbChords small {display:block;font:12px Arial,sans-serif;color:#8a947c;margin-bottom:10px;}
+.wbNotePreview {display:flex;gap:4px;flex-wrap:wrap;padding:18px 0;}.wbNotePreview span {padding:6px;border:1px solid #bac8b2;border-radius:3px;font-size:12px;background:#dce5d2;}
+.wbMuted {color:#687961;font-size:12px!important;line-height:1.6;}.wbEmpty {padding:32px;background:#e5ebde;border-radius:4px;}
+.wbFile {display:block;padding:10px 16px;border:1px solid #95aa8c;border-radius:4px;background:#dfe7d6;font-size:14px;cursor:pointer;white-space:nowrap;}.wbFile input {display:none;}
+.wbSearch {display:flex;gap:8px;margin:20px 0;}.wbSearch input {flex:1;}.wbSamples {display:grid;grid-template-columns:1fr 1fr;gap:16px;}.wbSample {padding:16px;border:1px solid #bdc7b5;border-radius:5px;min-width:0;background:#e9ede2;}.wbSample header {display:flex;align-items:center;gap:10px;font-size:13px;}.wbSample strong {flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.wbSample small {font-size:12px;color:#6d7f61;}.wbSample header button {border:0;background:transparent;font-size:20px;}.wbSample canvas {width:100%;height:64px;border-radius:3px;margin:12px 0;}.wbSampleMeta {display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;}.wbSampleMeta input {width:100%;min-width:0;}.wbAudioClip {padding-top:26px;margin-top:24px;border-top:1px solid #c2ccba;}
+.wbMeters {display:grid;grid-template-columns:1fr 1fr;gap:12px;}.wbMeters>div {padding:14px;border:1px solid #bcc8b3;background:#e4eadd;border-radius:4px;}.wbMeters small {font-size:11px;letter-spacing:.04em;color:#6c7f60;display:block;}.wbMeters strong {font:26px Georgia,serif;display:block;margin-top:10px;}
+#wbSpectrum {width:100%;height:150px;border-radius:4px;margin-top:18px;}#wbPhase {width:100%;height:150px;border-radius:4px;margin-top:8px;}#wbMeasured {font-size:13px;line-height:1.7;color:#5a714f;padding:14px;background:#dde6d3;border-radius:4px;}
+.wbFooter {display:flex;align-items:center;gap:10px;padding:14px 24px;border-top:1px solid #c1cdb7;background:#e1e6d9;font-size:12px;}.wbFooter span {flex:1;line-height:1.6;}.wbFooter button:last-child {background:#294830;color:#f1eddd;border-color:#294830;}
+@media(max-width:800px){.houseTopRight #houseProject{display:none;}.houseTopRight button{font-size:12px;padding:8px;}.houseBrand span{display:none;}.workbench{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);}.wbHeader{padding:18px;}.wbBody{padding:18px;max-height:calc(100dvh - 285px);}.wbTwo,.wbSamples{grid-template-columns:1fr;gap:24px;}.wbTwo>section+section{border-left:0;padding-left:0;border-top:1px solid #c5cfbc;padding-top:24px;}.wbContext{padding:10px 18px;}.wbContext>span{display:none;}.wbEffectParams{grid-template-columns:1fr 1fr;}.wbChainIntro{flex-wrap:wrap;}.wbChainIntro>div{flex-basis:100%;}.wbEffect header{flex-wrap:wrap;}.wbHeader h2{font-size:27px;}.wbFooter{padding:12px;font-size:11px;}.wbFooter span{max-height:42px;overflow:auto;}.wbTabs{padding:8px 10px 0;}.wbTabs button{font-size:13px;}.houseBottom .monitorStatus{display:none;}}
+#houseHud .houseBottom button,#houseHud .movementHint button {font-size:13px!important;}
+#houseHud .houseBottom button#housePlay span {font-size:13px;}
+#houseHud .houseBottom>div>span,#houseHud .movementHint span {font-size:12px;}
+#houseHud .houseBottom .monitorStatus {font-size:10px;}
+@media(max-width:800px){#houseHud .movementHint{display:none;}#houseHud .houseBottom>div>span{font-size:12px;}}
+.wbPerformance{border-top:1px solid #c7d0bf;margin-top:28px;padding-top:24px;}.wbPerformance p{max-width:none;}.wbPerformance .wbActions{align-items:center;}.wbKeyboard{display:flex;gap:3px;margin-top:18px;height:100px;}.wbKeyboard button{flex:1;padding:60px 0 8px;font-size:10px;background:#faf7ee;min-width:0;}.wbKeyboard button.black{background:#263e2d;color:#e7e6d8;height:70px;padding-top:35px;}.wbKeyboard button:active{background:#c5d5b7;}
+.wbRecovery {display:flex!important;justify-content:space-between;align-items:center;gap:20px;width:100%;margin:10px 0;text-align:left;}.wbRecovery strong{font-size:14px;font-weight:500;}.wbRecovery small{font-size:12px;color:#6a7d60;}
+#workbench button.active{color:#f0ead9!important;}#workbench input[type=range]::-webkit-slider-thumb{background:#58784f;border-color:#58784f;}#workbench input[type=range]::-moz-range-thumb{background:#58784f;border-color:#58784f;}
+.workbench[open]{display:flex;flex-direction:column;}#workbench .wbHeader,#workbench .wbTabs,#workbench .wbContext,#workbench .wbFooter{flex-shrink:0;}#workbench .wbBody{flex:1;min-height:0;max-height:none;}#workbench .wbPerformance{scroll-margin-top:0;}
+
+/* Readable controls and labels over bright architecture. */
+.houseTopRight button,.houseBottom button,.roomEditorial > button {font-size:14px;min-height:36px;}
+.houseTopRight > span,.houseBottom > div > span,.houseBrand span {font-size:12px;}
+.roomEditorial > span {font-size:12px;letter-spacing:1.3px;}
+.roomEditorial p {font-size:14px;color:#eeeadd;}
+.roomEditorial > button {color:#faf4e8;}
+.wbControl:focus-within {outline:2px solid #526c4e;outline-offset:5px;border-radius:3px;}
+@media(max-width:700px){
+ .houseTopRight {gap:4px;} .houseTopRight button {font-size:12px;min-height:40px;}
+ .roomEditorial > span {font-size:11px;}.roomEditorial p,.roomEditorial > button {font-size:14px;}
+ .productionMode .workspaceNav button,.productionMode .editorTabs button {font-size:12px;min-height:36px;}
+ .productionMode .editorTabs {overflow-x:auto;min-height:40px;}.productionMode .editorTabs > div {display:flex;white-space:nowrap;}
+ .productionMode #productionRoomLabel {gap:10px;flex-wrap:wrap;min-height:34px;height:auto;font-size:11px;}
+ .productionMode #productionRoomLabel button {font-size:12px;min-height:30px;}
+}

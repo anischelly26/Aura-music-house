@@ -1,0 +1,107 @@
+{
+  "source": "Five user-supplied FBX ZIPs. Original archives were not modified.",
+  "textureLimitPx": 1024,
+  "payloadBytes": 5274942,
+  "packs": [
+    {
+      "pack": "chairs-and-window-set-game-ready",
+      "sourceSha256": "9ded90154a24c92bd9cd44d8f01dfc64b705252b41db485df758710feec46578",
+      "sourceBytes": 27707624,
+      "glbBytes": 873612,
+      "triangles": 7265,
+      "meshes": [
+        "Asset"
+      ],
+      "textureFiles": [
+        "1193ee51c91f5e01-flip.webp",
+        "ab1c4278b4f5355f-flip.webp",
+        "d6a5d5f316b3a337-flip.webp"
+      ]
+    },
+    {
+      "pack": "japroom-14-otaku",
+      "sourceSha256": "7c67a9521b6e47f494404bc5a599b51d8afc02c1ccce1dd097bd8cad4abd4f3a",
+      "sourceBytes": 19306110,
+      "glbBytes": 179548,
+      "triangles": 1843,
+      "meshes": [
+        "node_0002",
+        "node_0012"
+      ],
+      "textureFiles": [
+        "3eef8396f391d772-flip.webp"
+      ]
+    },
+    {
+      "pack": "loft2-free-interior",
+      "sourceSha256": "a6600a63f167cab9ed99f430bc1e6814897dd9520de7edfbe5470abdf602a80f",
+      "sourceBytes": 49620457,
+      "glbBytes": 1690088,
+      "triangles": 17504,
+      "meshes": [
+        "node_0008",
+        "Cube005",
+        "node_0006",
+        "node_0001",
+        "Cube002",
+        "node_0005",
+        "node_0007",
+        "Plane010"
+      ],
+      "textureFiles": [
+        "e893e2d65c1b87f4-flip.webp",
+        "b5c882be2f3abcff-flip.webp",
+        "38bf1f18b954d92a-flip.webp",
+        "f4fb5df0561ed645-flip.webp",
+        "d0a8dede77cbbe17-flip.webp",
+        "a26a3a2d3299a5b3-flip.webp",
+        "c997ea184af68388-flip.webp",
+        "bc1126b282e44754-flip.webp",
+        "388522131f1664e7-flip.webp"
+      ]
+    },
+    {
+      "pack": "modern-house-villa-game-ready-4k",
+      "sourceSha256": "63a9b1c50e3101fa727c7e59e8a0bcb5304160406474e3067d2ee7aa379b175c",
+      "sourceBytes": 124807902,
+      "glbBytes": 235264,
+      "triangles": 2364,
+      "meshes": [
+        "ROOF",
+        "GARAGE",
+        "NUMBERPLATE",
+        "HOUSE_BASE",
+        "AWNING",
+        "OUTSIDE_LIGHTS",
+        "ROOF_GUTTER"
+      ],
+      "textureFiles": [
+        "d9e5f4b10347b6f6-flip.webp",
+        "3158e32ab37165b4-flip.webp",
+        "4bea43bc6ca31b23-flip.webp",
+        "2d204caa2f275952-flip.webp",
+        "5ab827455a78e340-flip.webp",
+        "fb94e12bfeac9dbf-flip.webp",
+        "450519f65051d3dd-flip.webp",
+        "fe6630711633e957-flip.webp",
+        "dfa93d39492a2b40-flip.webp"
+      ]
+    },
+    {
+      "pack": "the-interior-14-is-spacious",
+      "sourceSha256": "6b12a529c345a8dbb3495294b81910f61de726e6b61f69680854c9d3e28e22da",
+      "sourceBytes": 33959087,
+      "glbBytes": 119852,
+      "triangles": 1212,
+      "meshes": [
+        "Cube001",
+        "Plane014",
+        "node_0"
+      ],
+      "textureFiles": [
+        "1cc63ae5b61c7eed-flip.webp",
+        "18d2ed796cbb8876-flip.webp"
+      ]
+    }
+  ]
+}

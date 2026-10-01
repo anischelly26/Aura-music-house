@@ -1,0 +1,26 @@
+[
+  {
+    "name": "before",
+    "antiPhaseMasterRms": 0.06624988174410451,
+    "antiPhaseTrackRms": 0,
+    "spectrumPeak": 0,
+    "centroid": 0,
+    "correlation": -1,
+    "stopDiscontinuity": 0.23399695754051208,
+    "stopWindowSamples": 3484,
+    "stopPrePeak": 0.23399922251701355,
+    "stopPostPeak": 0
+  },
+  {
+    "name": "after",
+    "antiPhaseMasterRms": 0.06616523467181139,
+    "antiPhaseTrackRms": 0.09222315979157904,
+    "spectrumPeak": 231,
+    "centroid": 1000.0001068859145,
+    "correlation": -1,
+    "stopDiscontinuity": 0.0004422292113304138,
+    "stopWindowSamples": 3740,
+    "stopPrePeak": 0.23399922251701355,
+    "stopPostPeak": 0
+  }
+]

@@ -1,0 +1,35 @@
+{
+  "models": {
+    "loaded": [
+      "the-interior-14-is-spacious",
+      "japroom-14-otaku",
+      "loft2-free-interior",
+      "chairs-and-window-set-game-ready",
+      "modern-house-villa-game-ready-4k"
+    ],
+    "errors": []
+  },
+  "routes": {
+    "count": 81,
+    "fail": []
+  },
+  "practiceTracks": 1,
+  "mobile": {
+    "dialog": 350,
+    "width": 350
+  },
+  "audioBefore": {
+    "origin": 0.045,
+    "graph": true
+  },
+  "audioAfter": {
+    "origin": 0.045,
+    "graph": true
+  },
+  "rms": {
+    "peak": 0.22781062126159668,
+    "rms": 0.07929089496733892
+  },
+  "errors": [],
+  "badRequests": []
+}

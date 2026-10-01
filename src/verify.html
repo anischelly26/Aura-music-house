@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><title>AURA engine verification</title>
+  <body
+    style="
+      background: #15161e;
+      color: #ddd;
+      font: 15px system-ui;
+      padding: 30px;
+    "
+  >
+    <h1>AURA · engine verification</h1>
+    <p id="status">Rendering actual Web Audio graphs…</p>
+    <ol id="results"></ol>
+    <script type="module">
+      import { AudioEngine, encodeWav } from "./audio.js";
+      import { makeEffect } from "./effects.js";
+      import { newProject, uid } from "./project.js";
+      const e = new AudioEngine(),
+        results = document.querySelector("#results");
+      let failed = 0;
+      const check = (label, ok, detail = "") => {
+        const li = document.createElement("li");
+        li.textContent = (ok ? "PASS" : "FAIL") + " — " + label + " " + detail;
+        li.style.color = ok ? "#69d6be" : "#ff9d9d";
+        results.append(li);
+        if (!ok) failed++;
+      };
+      const energy = (b, ch = 0) => {
+        const a = b.getChannelData(ch);
+        return a.reduce((s, x) => s + x * x, 0) / a.length;
+      };
+      try {
+        const p = newProject(true);
+        p.bpm = 240;
+        p.bars = 1;
+        p.tracks[0].reverb = 0;
+        p.tracks[0].clips[0].notes = [
+          { id: uid(), pitch: 69, start: 0, duration: 2, velocity: 0.8 },
+        ];
+        const b = await e.render(p);
+        check(
+          "MIDI produces non-silent stereo output",
+          energy(b) > 1e-6,
+          energy(b).toExponential(3),
+        );
+        check(
+          "Offline render includes 2 second tail",
+          Math.abs(b.duration - 3) < 0.001,
+        );
+        const muted = structuredClone(p);
+        muted.tracks[0].mute = true;
+        const mb = await e.render(muted);
+        check("Mute produces silence", energy(mb) < 1e-12);
+        const pan = structuredClone(p);
+        pan.tracks[0].pan = -1;
+        const pb = await e.render(pan);
+        check(
+          "Hard left pan silences right channel",
+          energy(pb, 0) > 1e-6 && energy(pb, 1) < 1e-12,
+        );
+        const auto = structuredClone(p);
+        auto.tracks[0].automation = [
+          { beat: 0, value: 0 },
+          { beat: 4, value: 0 },
+        ];
+        const ab = await e.render(auto);
+        check("Zero gain automation is silent", energy(ab) < 1e-12);
+        const solo = structuredClone(p);
+        const second = structuredClone(solo.tracks[0]);
+        second.id = uid();
+        second.gain = 0;
+        second.solo = true;
+        solo.tracks.push(second);
+        const sb = await e.render(solo);
+        check("Solo excludes unsoloed track", energy(sb) < 1e-12);
+        const low = structuredClone(p);
+        low.master = p.master / 2;
+        const lb = await e.render(low);
+        check(
+          "Master gain halves amplitude",
+          Math.abs(energy(lb) / energy(b) - 0.25) < 0.005,
+        );
+        const wav = encodeWav(b);
+        check(
+          "WAV contains full stereo PCM",
+          wav.byteLength === 44 + b.length * 4 &&
+            new DataView(wav).getUint16(22, true) === 2,
+        );
+        const ctx = new OfflineAudioContext(2, 44100, 44100);
+        const decoded = await ctx.decodeAudioData(wav);
+        check(
+          "Encoded WAV decodes to audible stereo",
+          decoded.numberOfChannels === 2 && energy(decoded) > 1e-6,
+        );
+        const delayed=structuredClone(p),insert=makeEffect("delay");insert.params.time=.5;insert.params.feedback=.5;delayed.tracks[0].inserts=[insert];
+        const delayedBuffer=await e.render(delayed);
+        check("Feedback delay extends export tail",delayedBuffer.duration>b.duration+1);
+        document.querySelector("#status").textContent = failed
+          ? "FAILED: " + failed + " checks"
+          : "ALL 10 AUDIO CHECKS PASSED";
+      } catch (err) {
+        check("Engine execution", false, err.stack);
+        document.querySelector("#status").textContent = "FAILED";
+      }
+    </script>
+  </body>
+</html>

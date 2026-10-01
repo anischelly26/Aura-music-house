@@ -1,0 +1,34 @@
+{
+  "workflow-master.wav": {
+    "bytes": 5523416,
+    "sampleRate": 44100,
+    "channels": 2,
+    "bits": 24,
+    "seconds": 20.87442176870748
+  },
+  "workflow.mid": {
+    "bytes": 1841
+  },
+  "workflow.aura": {
+    "bytes": 80952,
+    "tracks": 6,
+    "assets": 1
+  },
+  "stems": {
+    "crc": "valid",
+    "tracks": [
+      {
+        "name": "01_Felt_circuits.wav",
+        "bytes": 5523416,
+        "bits": 24,
+        "channels": 2
+      },
+      {
+        "name": "02_Sub_architecture.wav",
+        "bytes": 5523416,
+        "bits": 24,
+        "channels": 2
+      }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "walk": {
+    "eventReceived": true,
+    "distance": 2.996750232672852
+  },
+  "look": {
+    "targetYaw": -0.3,
+    "actualYaw": -0.0702214984906054
+  },
+  "productionBackgroundRenders": 0,
+  "screenshots": [
+    "after-final-room-gallery.png",
+    "after-final-room-idea.png",
+    "after-final-room-instrument.png",
+    "after-final-room-rhythm.png",
+    "after-final-room-record.png",
+    "after-final-room-arrange.png",
+    "after-final-room-living.png",
+    "after-final-room-master.png",
+    "after-final-room-terrace.png"
+  ],
+  "errors": []
+}

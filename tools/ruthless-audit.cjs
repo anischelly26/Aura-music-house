@@ -1,0 +1,70 @@
+// Isolated renderer/DSP test harness; never controls the user's browser session.
+const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/playwright');
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const out=path.resolve(__dirname,'../docs/audit-2026-10-01');
+fs.mkdirSync(out,{recursive:true});
+(async()=>{
+  const browser=await chromium.launch({executablePath:process.env.AURA_CHROMIUM_PATH,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-angle=swiftshader','--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
+  const page=await browser.newPage({viewport:{width:1366,height:900},acceptDownloads:true});
+  const errors=[],warnings=[];
+  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning')warnings.push(m.text());});
+  const started=Date.now();
+  await page.goto('http://localhost:3000/');
+  await page.waitForFunction(()=>window.aura?.house?.renderer&&window.aura?.workbench);
+  const short=!!process.env.AURA_AUDIT_SHORT;
+  if(short)await page.evaluate(()=>aura.house.renderer.setAnimationLoop(null));
+  const report={run:process.env.AURA_AUDIT_RUN||'before',coldStartMs:Date.now()-started};
+  report.gpu=await page.evaluate(()=>{const gl=aura.house.renderer.getContext(),d=gl.getExtension('WEBGL_debug_renderer_info');return d?gl.getParameter(d.UNMASKED_RENDERER_WEBGL):'Unavailable';});
+  const snap=async(name)=>short?null:page.screenshot({path:path.join(out,report.run+'-'+name+'.png'),timeout:60000});
+  await snap('06-landing');const arrivalStarted=Date.now();await page.click(short?'#skipArrival':'#enterHouse');
+  await page.waitForFunction(()=>!aura.house.arrival,null,{timeout:45000});
+  report.arrivalMs=Date.now()-arrivalStarted;
+  await snap('07-gallery');
+  report.rooms=[];
+  for(const id of ['idea','instrument','rhythm','record','arrange','living','master','terrace']){
+    await page.evaluate(id=>aura.house.goRoom(id,true),id);await page.waitForTimeout(350);await snap('room-'+id);
+    report.rooms.push(short?{id,limit:'Rendering paused in this regression pass; use captured room images for visual evidence.'}:await page.evaluate(()=>({id:aura.house.currentRoom,draws:aura.house.renderer.info.render.calls,triangles:aura.house.renderer.info.render.triangles})));
+    console.log('Captured room',id);
+  }
+  report.performance=short?{limit:'No second FPS sample; room captures and initial measurements are retained.'}:await page.evaluate(async()=>{const h=aura.house;h.goRoom('living',true);const deltas=[];let last=performance.now();await new Promise(resolve=>{function tick(t){deltas.push(t-last);last=t;if(deltas.length<24)requestAnimationFrame(tick);else resolve();}requestAnimationFrame(tick);});deltas.sort((a,b)=>a-b);return {medianFrameMs:deltas[12],p95FrameMs:deltas[22],draws:h.renderer.info.render.calls,triangles:h.renderer.info.render.triangles};});
+  report.movement=await page.evaluate(()=>{const h=aura.house;h.renderer.setAnimationLoop(null);h.arrival=null;h.journey=null;h.walkTarget=null;const run=(codes)=>{h.camera.position.set(25,1.72,28);h.lookAt(25,1.72,23);h.velocity.set(0,0);h.keys=new Set(codes);for(let i=0;i<60;i++)h.move(1/60);return Math.hypot(h.camera.position.x-25,h.camera.position.z-28);};const straight=run(['KeyW']),diagonal=run(['KeyW','KeyA']);h.keys.clear();const rotateBefore=h.camera.rotation.y;h.rotate(120,0);const instantRotation=h.camera.rotation.y-rotateBefore;
+    h.goRoom('gallery',true);h.goRoom('instrument');let maxTurn=0,last=h.camera.quaternion.clone(),frames=0;while(h.journey&&frames++<3000){h.move(1/60);maxTurn=Math.max(maxTurn,last.angleTo(h.camera.quaternion));last.copy(h.camera.quaternion);}h.goRoom('instrument',true);
+    return {straightMetres:straight,diagonalMetres:diagonal,diagonalRatio:diagonal/straight,rotationAppliedImmediately:instantRotation,maxJourneyTurnDegrees:maxTurn*180/Math.PI,journeyCompleted:!h.journey,pianoBenchWalkable:h.architecture.canWalk(-22.3,-.43),recordDeskWalkable:h.architecture.canWalk(21.2,22)};});
+  report.routes=await page.evaluate(async()=>{const {rooms}=await import('/src/house/layout.js'),{walkRoute}=await import('/src/house/navigation.js'),h=aura.house,positions={};for(const r of rooms){h.goRoom(r.id,true);positions[r.id]={x:h.camera.position.x,z:h.camera.position.z};}const failures=[];let samples=0;for(const a of rooms)for(const b of rooms){const path=walkRoute(h.architecture,positions[a.id],positions[b.id]);if(!path){failures.push(a.id+' → '+b.id+' unavailable');continue;}for(let j=1;j<path.length;j++){const start=path[j-1],end=path[j],steps=Math.ceil(Math.hypot(end.x-start.x,end.z-start.z)/.05);for(let i=1;i<=steps;i++){const x=start.x+(end.x-start.x)*i/steps,z=start.z+(end.z-start.z)*i/steps;samples++;if(!h.architecture.canWalk(x,z))failures.push(a.id+' → '+b.id+' collision');}}}h.goRoom('instrument',true);return {count:81,samples,failures:[...new Set(failures)]};});
+  await page.keyboard.press('Shift+Digit3');assert.equal(await page.evaluate(()=>aura.house.currentRoom),'instrument');assert.equal(await page.evaluate(()=>aura.house.journey),null);
+  await page.keyboard.press('Control+Enter');assert.equal(await page.evaluate(()=>aura.house.mode),'production');await page.keyboard.press('Control+Enter');assert.equal(await page.evaluate(()=>aura.house.mode),'house');
+  report.projectSafety=await page.evaluate(async()=>{const {ProjectStore,newProject,validateProject}=await import('/src/project.js');const s=new ProjectStore(newProject());let rejected=false;try{s.commit('Failing operation',p=>{p.name='CORRUPTED';throw Error('Fixture failure');});}catch{rejected=true;}const p=newProject();p.tracks[0].synth={release:16000};let invalidVoiceRejected=false;try{validateProject(p);}catch{invalidVoiceRejected=true;}return {throwPropagated:rejected,projectAfterFailedCommit:s.project.name,undoEntries:s.undoStack.length,invalidVoiceRejected};});
+  console.log('Movement and project safety',report.movement,report.projectSafety);
+  report.audio=await page.evaluate(async()=>{const {measureBuffer}=await import('/src/analysis.js'),{presets,makeTrack,makeClip}=await import('/src/project.js');const starter=await aura.engine.render(aura.store.project);const inspect=buffer=>{const m=measureBuffer(buffer);let clips=0,maxStep=0,dc=0;for(let ch=0;ch<buffer.numberOfChannels;ch++){const a=buffer.getChannelData(ch);for(let i=0;i<a.length;i++){if(Math.abs(a[i])>=1)clips++;dc+=a[i];if(i)maxStep=Math.max(maxStep,Math.abs(a[i]-a[i-1]));}}return {...m,clips,maxAdjacentStep:maxStep,dc:dc/(buffer.length*buffer.numberOfChannels),seconds:buffer.duration,sampleRate:buffer.sampleRate};};const voices=[];for(const v of presets){const t=makeTrack(v.id);t.reverb=0;const c=makeClip('Probe',0,2);c.notes=[{id:'n',pitch:v.id==='drums'?36:60,start:0,duration:.6,velocity:.7}];t.clips=[c];voices.push({id:v.id,...inspect(await aura.engine.render({bpm:120,bars:1,master:.72,swing:0,tracks:[t],assets:{}}))});}return {starter:inspect(starter),voices};});
+  await page.click('#houseWorkbenchButton');await snap('08-instruments');
+  report.focus=await page.evaluate(()=>{const slider=document.querySelector('#voiceRelease');slider.focus();slider.value='.55';slider.dispatchEvent(new Event('change',{bubbles:true}));return {focusedAfterChange:document.activeElement.id,oldControlStillAttached:slider.isConnected};});
+  await page.click('[data-wbtab="effects"]');await page.selectOption('#wbEffectType','delay');await page.click('#wbAddEffect');await snap('09-effects');
+  report.effectFocus=await page.evaluate(()=>{const slider=document.querySelector('#fx-0-time');slider.focus();slider.value='.25';slider.dispatchEvent(new Event('change',{bubbles:true}));return {focusedAfterChange:document.activeElement.id,oldControlStillAttached:slider.isConnected};});
+  await page.click('[data-wbtab="midi"]');await page.click('[data-chord="0"]');await page.click('#wbUndo');await snap('10-midi');
+  await page.click('[data-wbtab="listen"]');await page.click('#wbPlay');await page.waitForTimeout(500);await snap('11-reference');await page.click('#wbPlay');
+  await page.click('[data-wbtab="export"]');await snap('12-deliverables');
+  const download=page.waitForEvent('download',{timeout:90000});await page.click('#wbExportMaster');await(await download).saveAs(path.join(out,report.run+'-master.wav'));
+  report.exportBytes=fs.statSync(path.join(out,report.run+'-master.wav')).size;
+  await page.click('[data-wbtab="recovery"]');await snap('13-recovery');
+  await page.click('#wbClose');await page.click('#houseModeButton');await page.click('[data-work="arrange"]');report.arrangeVisible=await page.locator('#timeline').isVisible();await snap('14-production');
+  await page.setViewportSize({width:390,height:844});await snap('15-mobile-production');
+  await page.click('#productionWorkbenchButton');await page.click('[data-wbtab="voice"]');await snap('16-mobile-instruments');
+  report.smallText=await page.evaluate(()=>[...document.querySelectorAll('#workbench button,#workbench label,#workbench p')].filter(e=>e.getBoundingClientRect().width&&parseFloat(getComputedStyle(e).fontSize)<12).length);
+  if(report.run==='after'){
+    assert.ok(Math.abs(report.movement.diagonalRatio-1)<1e-6);
+    assert.ok(report.movement.maxJourneyTurnDegrees<20);
+    assert.equal(report.movement.rotationAppliedImmediately,0);
+    assert.equal(report.projectSafety.projectAfterFailedCommit,'After the blue hour');
+    assert.ok(report.projectSafety.invalidVoiceRejected);
+    assert.equal(report.focus.focusedAfterChange,'voiceRelease');
+    assert.equal(report.effectFocus.focusedAfterChange,'fx-0-time');
+    assert.ok(report.arrangeVisible);assert.equal(report.movement.pianoBenchWalkable,false);assert.equal(report.movement.recordDeskWalkable,false);
+    assert.deepEqual(report.routes.failures,[]);
+    assert.equal(report.audio.starter.clips,0);
+    assert.deepEqual(errors,[]);
+  }
+  report.errors=errors;report.warnings=warnings;
+  fs.writeFileSync(path.join(out,report.run+'-measurements.json'),JSON.stringify(report,null,2));
+  console.log(JSON.stringify({run:report.run,coldStartMs:report.coldStartMs,performance:report.performance,movement:report.movement,safety:report.projectSafety,focus:report.focus,effectFocus:report.effectFocus,starter:report.audio.starter,errors},null,2));
+  await browser.close();
+})().catch(e=>{console.error(e);process.exit(1);});

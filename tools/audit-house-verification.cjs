@@ -1,0 +1,16 @@
+// Actual rendered house and real pointer/keyboard input in an isolated QA browser.
+const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/playwright');
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({executablePath:process.env.AURA_CHROMIUM_PATH,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-angle=swiftshader','--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
+ const page=await browser.newPage({viewport:{width:1366,height:900}}),errors=[],out=path.resolve(__dirname,'../docs/audit-2026-10-01');page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://localhost:3000/dist/index.html');await page.waitForFunction(()=>aura?.house?.renderer);await page.evaluate(()=>aura.house.renderer.setAnimationLoop(null));await page.click('#skipArrival');
+ await page.evaluate(()=>{const h=aura.house;h.camera.position.set(25,1.72,28);h.lookAt(25,1.72,23);h.velocity.set(0,0);h.camera.updateMatrixWorld();});
+ await page.keyboard.down('w');const walk=await page.evaluate(()=>{const h=aura.house,z=h.camera.position.z;const assertKey=h.keys.has('KeyW');for(let i=0;i<60;i++)h.move(1/60);return {eventReceived:assertKey,distance:z-h.camera.position.z};});await page.keyboard.up('w');assert.ok(walk.eventReceived&&walk.distance>2.9);
+ const canvas=await page.locator('#world').boundingBox(),yawBefore=await page.evaluate(()=>aura.house.lookYaw);await page.mouse.move(canvas.width*.5,canvas.height*.5);await page.mouse.down();await page.mouse.move(canvas.width*.5+120,canvas.height*.5+40,{steps:5});await page.mouse.up();const look=await page.evaluate(()=>{aura.house.move(1/60);return {targetYaw:aura.house.lookYaw,actualYaw:aura.house.camera.rotation.y};});assert.notEqual(look.targetYaw,yawBefore);assert.ok(Math.abs(look.actualYaw-yawBefore)<Math.abs(look.targetYaw-yawBefore));
+ await page.keyboard.press('Shift+3');assert.equal(await page.evaluate(()=>aura.house.currentRoom),'instrument');assert.equal(await page.evaluate(()=>aura.house.journey),null);
+ const shots=[];for(const room of ['gallery','idea','instrument','rhythm','record','arrange','living','master','terrace']){await page.evaluate(id=>{const h=aura.house;h.goRoom(id,true);h.camera.updateMatrixWorld();h.renderer.render(h.scene,h.camera);},room);const filename='after-final-room-'+room+'.png';await page.screenshot({path:path.join(out,filename),timeout:60000});shots.push(filename);console.log('Final scene captured',room);}
+ // Verify production view actually stops background world rendering.
+ const idle=await page.evaluate(()=>{const h=aura.house;h.production('arrange');let renders=0;const original=h.renderer.render;h.renderer.render=()=>renders++;for(let i=0;i<60;i++)h.frame(performance.now()+i*16.67);h.renderer.render=original;return renders;});assert.equal(idle,0);
+ assert.deepEqual(errors,[]);fs.writeFileSync(path.join(out,'house-input-verification.json'),JSON.stringify({walk,look,productionBackgroundRenders:idle,screenshots:shots,errors},null,2));await browser.close();console.log('HOUSE INPUT AND SCENE VERIFICATION PASSED');
+})().catch(e=>{console.error(e);process.exit(1)});

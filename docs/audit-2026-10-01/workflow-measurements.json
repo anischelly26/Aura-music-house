@@ -1,0 +1,94 @@
+{
+  "lens": "HARMONIC CONTEXT\nD Minor · 3 notes in this clip\n\nSelected clip notes fit the project scale. Try a harmony below the melody for a different color.\n\n↗ Suggest editable harmony\nSIGNAL OBSERVATION\nListen before changing.\n\nPlay the session to measure the master peak and RMS. These are live sample measurements, not LUFS or true peak.\n\nYOUR CREATIVE CONTROL\nMake it your own.\n\nSuggestions appear as ghost notes. Audition, accept or discard them. Your original phrase stays intact.\n\nLocal analysis + music-theory rules. No model connected. No upload, fabricated diagnosis or automatic edits.",
+  "dsp": [
+    {
+      "name": "before",
+      "antiPhaseMasterRms": 0.06624988174410451,
+      "antiPhaseTrackRms": 0,
+      "spectrumPeak": 0,
+      "centroid": 0,
+      "correlation": -1,
+      "stopDiscontinuity": 0.23399695754051208,
+      "stopWindowSamples": 3484,
+      "stopPrePeak": 0.23399922251701355,
+      "stopPostPeak": 0
+    },
+    {
+      "name": "after",
+      "antiPhaseMasterRms": 0.06616523467181139,
+      "antiPhaseTrackRms": 0.09222315979157904,
+      "spectrumPeak": 231,
+      "centroid": 1000.0001068859145,
+      "correlation": -1,
+      "stopDiscontinuity": 0.0004422292113304138,
+      "stopWindowSamples": 3740,
+      "stopPrePeak": 0.23399922251701355,
+      "stopPostPeak": 0
+    }
+  ],
+  "effectBypass": [
+    {
+      "type": "eq",
+      "wetRms": 0.004862344978734342,
+      "bypassDifference": 0
+    },
+    {
+      "type": "compressor",
+      "wetRms": 0.008668533495153456,
+      "bypassDifference": 0
+    },
+    {
+      "type": "delay",
+      "wetRms": 0.0036409228795396043,
+      "bypassDifference": 8.752349539564719e-12
+    },
+    {
+      "type": "saturation",
+      "wetRms": 0.014501182264146456,
+      "bypassDifference": 0
+    },
+    {
+      "type": "chorus",
+      "wetRms": 0.0040671730510101695,
+      "bypassDifference": 1.853966632991977e-12
+    },
+    {
+      "type": "tremolo",
+      "wetRms": 0.004142359572786534,
+      "bypassDifference": 8.752349539564719e-12
+    },
+    {
+      "type": "filter",
+      "wetRms": 0.005105854832369101,
+      "bypassDifference": 1.853966632991977e-12
+    },
+    {
+      "type": "width",
+      "wetRms": 0.004862344978734342,
+      "bypassDifference": 8.752349539564719e-12
+    }
+  ],
+  "referencePeakAfterMatch": 0.9899999999999999,
+  "saveFailure": {
+    "rejected": true,
+    "state": "Not saved"
+  },
+  "errors": [],
+  "completed": [
+    "real-time stereo meters",
+    "sample discontinuity",
+    "held keyboard notes",
+    "MIDI capture",
+    "all eight inserts",
+    "saved chain",
+    "reference RMS headroom",
+    "reference dismissal",
+    "save failure",
+    "save/reload equality",
+    "piano-roll editing/undo",
+    "desktop/mobile arrangement",
+    "command palette",
+    "fake microphone capture",
+    "project/MIDI/master/stem downloads"
+  ]
+}

@@ -1,0 +1,311 @@
+{
+  "run": "before",
+  "coldStartMs": 8837,
+  "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "rooms": [
+    {
+      "id": "idea",
+      "draws": 226,
+      "triangles": 52940
+    },
+    {
+      "id": "instrument",
+      "draws": 149,
+      "triangles": 22754
+    },
+    {
+      "id": "rhythm",
+      "draws": 105,
+      "triangles": 22574
+    },
+    {
+      "id": "record",
+      "draws": 176,
+      "triangles": 56652
+    },
+    {
+      "id": "arrange",
+      "draws": 40,
+      "triangles": 12230
+    },
+    {
+      "id": "living",
+      "draws": 143,
+      "triangles": 52572
+    },
+    {
+      "id": "master",
+      "draws": 48,
+      "triangles": 21040
+    },
+    {
+      "id": "terrace",
+      "draws": 31,
+      "triangles": 12884
+    }
+  ],
+  "performance": {
+    "medianFrameMs": 1750,
+    "p95FrameMs": 3299.899999999994,
+    "draws": 143,
+    "triangles": 52572
+  },
+  "movement": {
+    "straightMetres": 2.996750232672852,
+    "diagonalMetres": 4.238044822090676,
+    "diagonalRatio": 1.4142135623730951,
+    "rotationAppliedImmediately": -0.6487710035839069,
+    "maxJourneyTurnDegrees": 108.3080739355788,
+    "journeyCompleted": true,
+    "pianoBenchWalkable": true,
+    "recordDeskWalkable": true
+  },
+  "projectSafety": {
+    "throwPropagated": true,
+    "projectAfterFailedCommit": "CORRUPTED",
+    "undoEntries": 0,
+    "invalidVoiceRejected": false
+  },
+  "audio": {
+    "starter": {
+      "peak": 0.4981688857078552,
+      "rms": 0.0903212989648039,
+      "crest": 14.831728487357747,
+      "correlation": 0.9953768656539289,
+      "duration": 19.84285714285714,
+      "clips": 0,
+      "maxAdjacentStep": 0.20940083265304565,
+      "dc": -0.0003783972190639764,
+      "seconds": 19.84285714285714,
+      "sampleRate": 44100
+    },
+    "voices": [
+      {
+        "id": "keys",
+        "peak": 0.04253898933529854,
+        "rms": 0.00568420226624116,
+        "crest": 17.482352880968335,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.0026574094081297517,
+        "dc": 2.4584291971009587e-07,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "pad",
+        "peak": 0.06037556752562523,
+        "rms": 0.007959392035374623,
+        "crest": 17.599626599078896,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.004744901321828365,
+        "dc": -1.2396025869484463e-06,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "bass",
+        "peak": 0.15534467995166779,
+        "rms": 0.024797045830369895,
+        "crest": 15.937928799586544,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.017405491322278976,
+        "dc": -5.218124904249005e-06,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "pluck",
+        "peak": 0.026792768388986588,
+        "rms": 0.002246672595905061,
+        "crest": 21.529556037124276,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.001863834637333639,
+        "dc": 2.508327684183159e-07,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "lead",
+        "peak": 0.05240815132856369,
+        "rms": 0.005759070148586084,
+        "crest": 19.18092943895331,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.009920675307512283,
+        "dc": -1.2271714957248569e-08,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "drums",
+        "peak": 0.11215867847204208,
+        "rms": 0.008279876087005068,
+        "crest": 22.636180922685938,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.0020365039817988873,
+        "dc": 1.9735394465950386e-05,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "electric",
+        "peak": 0.03307478502392769,
+        "rms": 0.0017789552898907705,
+        "crest": 25.386639937941837,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.0018194103613495827,
+        "dc": 1.8372545750367237e-07,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "organ",
+        "peak": 0.05531267076730728,
+        "rms": 0.008242101022052131,
+        "crest": 16.535733910986096,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.007753416197374463,
+        "dc": 7.889261742244951e-07,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "bell",
+        "peak": 0.032686639577150345,
+        "rms": 0.0022070951814386853,
+        "crest": 23.410984233151424,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.004058770136907697,
+        "dc": 9.561319440511319e-07,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "marimba",
+        "peak": 0.035491976886987686,
+        "rms": 0.0022417793153397987,
+        "crest": 23.99074664737363,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.002648215042427182,
+        "dc": 2.3565237145881003e-07,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "strings",
+        "peak": 0.031003162264823914,
+        "rms": 0.0027441498656182325,
+        "crest": 21.05996335232305,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.007745803246507421,
+        "dc": -2.2337273051773237e-07,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "flute",
+        "peak": 0.0634293407201767,
+        "rms": 0.011100525041199849,
+        "crest": 15.138933530570695,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.0038030327996239066,
+        "dc": 1.599817077040029e-06,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "reed",
+        "peak": 0.05206555873155594,
+        "rms": 0.01056909311412364,
+        "crest": 13.850256184617908,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.007288642227649689,
+        "dc": 1.5342438396284493e-06,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "brass",
+        "peak": 0.06703094393014908,
+        "rms": 0.0068810814071101276,
+        "crest": 19.772372786930436,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.01614946825429797,
+        "dc": 3.779411150566832e-07,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "choir",
+        "peak": 0.023291826248168945,
+        "rms": 0.0024413674055124533,
+        "crest": 19.591407993218603,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.004379614721983671,
+        "dc": 7.670260083954379e-08,
+        "seconds": 4,
+        "sampleRate": 44100
+      },
+      {
+        "id": "harp",
+        "peak": 0.03145991265773773,
+        "rms": 0.00224319208074018,
+        "crest": 22.937820989584804,
+        "correlation": 1,
+        "duration": 4,
+        "clips": 0,
+        "maxAdjacentStep": 0.0018948095384985209,
+        "dc": 2.5436045050365564e-07,
+        "seconds": 4,
+        "sampleRate": 44100
+      }
+    ]
+  },
+  "focus": {
+    "focusedAfterChange": "",
+    "oldControlStillAttached": false
+  },
+  "effectFocus": {
+    "focusedAfterChange": "",
+    "oldControlStillAttached": false
+  },
+  "exportBytes": 5458010,
+  "smallText": 17,
+  "errors": [],
+  "warnings": [],
+  "landingCaptureAndArrivalMs": 26496,
+  "measurementLimits": [
+    "Software renderer, not hardware FPS.",
+    "Landing capture plus arrival timing includes screenshot cost.",
+    "Two collision probes fell outside the physical furniture; excluded from conclusions."
+  ]
+}

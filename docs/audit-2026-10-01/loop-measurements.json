@@ -1,0 +1,18 @@
+[
+  {
+    "name": "before",
+    "cycleSeconds": 1,
+    "restartGapMs": 59.41043083900222,
+    "boundarySamples": 7056,
+    "silentBoundarySamples": 2623,
+    "boundaryPeak": 0.23399671912193298
+  },
+  {
+    "name": "after",
+    "cycleSeconds": 1,
+    "restartGapMs": -1.1102230246251565e-13,
+    "boundarySamples": 7056,
+    "silentBoundarySamples": 3,
+    "boundaryPeak": 0.23421572148799896
+  }
+]

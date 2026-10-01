@@ -1,0 +1,23 @@
+{
+  "detail": {
+    "cameraWalkable": true,
+    "groups": [
+      "Listening lounge",
+      "Gaming library",
+      "Retro television",
+      "Recording listening corner",
+      "Idea-room reading nook",
+      "Neighboring villa",
+      "Villa study"
+    ]
+  },
+  "physicalConsole": true,
+  "physicalCoachTablet": true,
+  "offline": {
+    "models": 5,
+    "errors": [],
+    "ai": false,
+    "embedded": 29
+  },
+  "errors": []
+}

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+artifacts/
+AURA.html
+AURA_Music_House_*.zip
+.env
+.env.*
+!.env.example
+.DS_Store
