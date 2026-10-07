@@ -1,0 +1,466 @@
+/*
+ * AURA — identity layer.
+ * The house is warm and physical; the system that floats inside it is precise.
+ * Three voices: a condensed grotesque for statements, an italic serif for the
+ * human voice (AURA, titles), a monospace for everything the system says.
+ * One signal colour: ember, the red of a recording light.
+ */
+@font-face { font-family: "Bricolage Grotesque"; src: url("../assets/fonts/bricolage-grotesque.woff2") format("woff2"); font-weight: 200 800; font-stretch: 75% 100%; font-display: swap; }
+@font-face { font-family: "Instrument Serif"; src: url("../assets/fonts/instrument-serif.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Serif"; src: url("../assets/fonts/instrument-serif-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "DM Mono"; src: url("../assets/fonts/dm-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "DM Mono"; src: url("../assets/fonts/dm-mono-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+
+:root {
+  --ink: #0c0b0a;
+  --char: #161412;
+  --raised2: #1e1b18;
+  --hair: #efe7d824;
+  --hair-strong: #efe7d855;
+  --bone: #efe7d8;
+  --paper: #d6cab6;
+  --dim: #8c8478;
+  --brass: #b08d57;
+  --ember: #ff5a26;
+  --display: "Bricolage Grotesque", "Arial Narrow", Arial, sans-serif;
+  --serif: "Instrument Serif", Georgia, serif;
+  --mono: "DM Mono", ui-monospace, Consolas, monospace;
+  --ease: cubic-bezier(0.22, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.7, 0, 0.2, 1);
+  /* The precise editor inherits the same palette. */
+  --bg: #0c0b0a;
+  --surface: #131110;
+  --raised: #1b1816;
+  --line: #2a2622;
+  --muted: #8c8478;
+  --text: #efe7d8;
+  --accent: #ff5a26;
+  --mint: #e8c58c;
+  --font: "Bricolage Grotesque", "Segoe UI", Arial, sans-serif;
+  --house-paper: #efe7d8;
+  --house-muted: #8c8478;
+  --house-ink: #0c0b0a;
+  --house-accent: #ff5a26;
+}
+html, body { background: var(--ink); }
+body { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+::selection { background: var(--ember); color: var(--ink); }
+#houseWorld { background: var(--ink); }
+/* The old full-frame green wash is gone; the lens does that work now. */
+#houseWorld::after { display: none; }
+#world { cursor: default; }
+body.locked #world { cursor: none; }
+.houseMode.entered:not(.locked):not(.focused):not(.phoneUp) #world { cursor: grab; }
+
+/* ——— Lens: vignette and grain that cost nothing ——— */
+#vignette { position: fixed; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(0deg, #06030266, transparent 16%, transparent 88%, #0603023b), radial-gradient(ellipse at 50% 46%, transparent 52%, #0603024d 100%); transition: opacity 0.8s var(--ease), background 0.8s; }
+#vignette::after { content: ""; position: absolute; inset: 0; opacity: 0.07; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E"); }
+body.focused #vignette { background: radial-gradient(ellipse at 50% 50%, transparent 34%, #060302b0 100%); }
+body.phoneUp #vignette, body.asking #vignette { background: radial-gradient(ellipse at 50% 50%, #06030238 0%, #060302a8 100%); }
+body.productionMode #vignette { opacity: 0; }
+
+/* ——— HUD: almost nothing ——— */
+#houseHud { position: fixed; inset: 0; z-index: 3; pointer-events: none; color: var(--bone); font-family: var(--mono); opacity: 0; transition: opacity 0.9s var(--ease); }
+body.entered.houseMode #houseHud { opacity: 1; }
+body.listening #houseHud, body.cinematic #houseHud { opacity: 0; }
+body.listening .touchNavigation { opacity: 1; }
+#houseHud button { pointer-events: auto; }
+.auraMark { position: absolute; left: 34px; top: 30px; width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 1px solid var(--hair-strong); background: none; display: grid; place-items: center; transition: border-color 0.3s, transform 0.4s var(--ease); }
+.auraMark i { width: 6px; height: 6px; border-radius: 50%; background: var(--ember); box-shadow: 0 0 14px #ff5a2690; transition: transform 0.4s var(--ease); }
+.auraMark:hover { background: none; border-color: var(--bone); transform: scale(1.08); }
+body.playing .auraMark i { animation: beat var(--beat, 0.535s) infinite var(--ease); }
+body.speaking .auraMark { border-color: var(--ember); }
+@keyframes beat { 0% { transform: scale(1.7); } 100% { transform: scale(1); } }
+#reticle { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: var(--bone); opacity: 0; transition: opacity 0.3s, width 0.25s var(--ease), height 0.25s var(--ease), margin 0.25s var(--ease), background 0.25s; box-shadow: 0 0 0 1px #0c0b0a55; }
+body.locked #reticle { opacity: 0.62; }
+body.locked.aiming #reticle { width: 18px; height: 18px; margin: -9px; background: transparent; box-shadow: inset 0 0 0 1px var(--bone), 0 0 0 1px #0c0b0a40; opacity: 0.95; }
+body.focused #reticle { opacity: 0; }
+/* On a touch screen the dot marks what USE will act on. */
+body.houseTouch:not(.focused):not(.phoneUp):not(.speaking) #reticle { opacity: 0.5; }
+body.houseTouch.aiming:not(.focused):not(.phoneUp):not(.speaking) #reticle { width: 18px; height: 18px; margin: -9px; background: transparent; box-shadow: inset 0 0 0 1px var(--bone), 0 0 0 1px #0c0b0a40; opacity: 0.95; }
+#prompt { position: absolute; left: 50%; top: calc(50% + 30px); transform: translate(-50%, 6px); display: flex; align-items: center; gap: 10px; white-space: nowrap; opacity: 0; transition: opacity 0.2s, transform 0.3s var(--ease); font-size: 10.5px; letter-spacing: 0.18em; text-shadow: 0 1px 12px #000c; }
+#prompt.visible { opacity: 1; transform: translate(-50%, 0); }
+#prompt kbd { font: 500 10px var(--mono); letter-spacing: 0.08em; min-width: 20px; height: 20px; padding: 0 6px; display: grid; place-items: center; border: 1px solid var(--hair-strong); background: #0c0b0a8c; color: var(--bone); }
+#prompt b { font-weight: 500; }
+#prompt b::before { content: "—"; margin-right: 10px; color: var(--dim); }
+#prompt span { font: italic 400 16px var(--serif); letter-spacing: 0; color: var(--paper); text-transform: none; }
+body:not(.locked):not(.focused) #prompt { left: var(--px, 50%); top: calc(var(--py, 50%) + 26px); }
+/* Clear of the notice line, which shares the bottom of the frame. */
+body.focused #prompt { top: auto; bottom: 98px; }
+.nowLine { position: absolute; left: 34px; bottom: 30px; display: flex; align-items: center; gap: 12px; padding: 6px 0; font: 400 10.5px var(--mono); letter-spacing: 0.16em; color: var(--bone); text-transform: uppercase; background: none; border-radius: 0; text-shadow: 0 1px 10px #000a; }
+.nowLine:hover { background: none; }
+.nowLine i { width: 7px; height: 7px; border: 1px solid var(--bone); border-radius: 50%; transition: background 0.3s, border-color 0.3s; }
+body.playing .nowLine i { background: var(--ember); border-color: var(--ember); animation: beat var(--beat, 0.535s) infinite var(--ease); }
+.nowLine em { font-style: normal; color: var(--dim); }
+.nowLine:hover span { text-decoration: underline; text-underline-offset: 4px; }
+.hint { position: absolute; right: 34px; bottom: 36px; font: 400 10px var(--mono); letter-spacing: 0.16em; color: var(--paper); text-align: right; opacity: 0; transition: opacity 0.7s; text-shadow: 0 1px 10px #000a; }
+.hint.visible { opacity: 0.86; }
+.hint b { font-weight: 500; color: var(--bone); margin-left: 16px; }
+.hint b:first-child { margin-left: 0; }
+.hint span { color: var(--dim); margin-left: 6px; }
+#lockHint { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); font: 400 10px var(--mono); letter-spacing: 0.3em; opacity: 0; transition: opacity 0.5s; padding: 10px 16px; border: 1px solid var(--hair); background: #0c0b0a66; }
+body.entered.houseMode.canLock:not(.locked):not(.focused):not(.seated):not(.phoneUp):not(.speaking):not(.listening):not(.dialogOpen):not(.houseTouch) #lockHint { opacity: 0.8; }
+#recordIndicator { position: absolute; left: 50%; top: 30px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; font: 500 10px var(--mono); letter-spacing: 0.2em; pointer-events: auto; background: #0c0b0ab0; border: 1px solid var(--hair); padding: 8px 14px; }
+#recordIndicator[hidden] { display: none; }
+#recordIndicator span { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); animation: blink 1s steps(2) infinite; }
+#recordIndicator button { border: 1px solid var(--hair-strong); border-radius: 0; font: 500 10px var(--mono); letter-spacing: 0.16em; padding: 6px 10px; }
+@keyframes blink { 50% { opacity: 0.2; } }
+.touchNavigation { bottom: calc(26px + env(safe-area-inset-bottom)); }
+.touchMoveLabel, .touchLook p { font: 400 9px var(--mono); letter-spacing: 0.2em; }
+#touchMovePad { background: #0c0b0aa8; border: 1px solid var(--hair-strong); box-shadow: none; }
+#touchMovePad.active { background: #0c0b0ad0; border-color: var(--bone); }
+#touchMoveThumb { background: var(--bone); border: 0; box-shadow: none; }
+/* At an instrument the walking pad has nothing to do; the one button left is the way back. */
+body.focused .touchMove, body.focused #touchMoveHelp { display: none; }
+body.focused .touchNavigation { justify-content: flex-end; }
+/* Just listening: the frame is clear, but a hand still needs the pad and a way to the phone. */
+body.listening.houseTouch #houseHud { opacity: 1; }
+body.listening.houseTouch #houseHud > :not(#touchNavigation):not(#auraMark) { visibility: hidden; }
+#touchInteract { border-radius: 0; border: 1px solid var(--hair-strong); background: #0c0b0aa8; font: 500 10px var(--mono); letter-spacing: 0.18em; }
+
+/* ——— Typographic moments ——— */
+#moment { position: fixed; inset: 0; z-index: 6; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 5vw 9vh; color: var(--bone); }
+#moment .momentEyebrow { font: 500 11px var(--mono); letter-spacing: 0.32em; margin-bottom: 2.2vh; opacity: 0; transform: translateY(8px); transition: opacity 0.5s 0.15s, transform 0.7s 0.15s var(--ease); }
+#moment .momentTitle { font: 800 clamp(64px, 13.5vw, 260px) / 0.8 var(--display); font-stretch: 75%; letter-spacing: -0.035em; text-transform: uppercase; margin-left: -0.05em; text-shadow: 0 4px 60px #0007; }
+#moment .momentTitle span { display: block; clip-path: inset(0 0 100% 0); transform: translateY(0.35em); transition: clip-path 0.9s var(--ease), transform 0.9s var(--ease); padding-bottom: 0.06em; }
+#moment .momentTitle span:nth-child(2) { transition-delay: 0.07s; }
+#moment .momentTitle span:nth-child(3) { transition-delay: 0.14s; }
+#moment .momentTitle span:nth-child(4) { transition-delay: 0.21s; }
+#moment .momentSub { font: italic 400 clamp(18px, 1.9vw, 30px) var(--serif); margin-top: 2.4vh; max-width: 34ch; opacity: 0; transform: translateY(8px); transition: opacity 0.6s 0.35s, transform 0.8s 0.35s var(--ease); color: var(--paper); }
+#moment.show .momentEyebrow, #moment.show .momentSub { opacity: 1; transform: none; }
+#moment.show .momentTitle span { clip-path: inset(0 0 -10% 0); transform: none; }
+#moment.leave .momentTitle span { clip-path: inset(100% 0 0 0); transform: translateY(-0.25em); transition-duration: 0.6s; transition-timing-function: var(--ease-in-out); }
+#moment.leave .momentEyebrow, #moment.leave .momentSub { opacity: 0; transition-delay: 0s; }
+#moment.small { justify-content: flex-end; padding-bottom: 12vh; }
+#moment.small .momentTitle { font-size: clamp(44px, 7vw, 132px); }
+#moment.centre { align-items: center; justify-content: center; text-align: center; padding: 0 5vw; }
+/* A single wipe of colour across the frame for the few truly large transitions. */
+#wipe { position: fixed; inset: 0; z-index: 7; pointer-events: none; background: var(--ember); transform: scaleX(0); transform-origin: left; }
+#wipe.run { animation: wipe 1.1s var(--ease-in-out) forwards; }
+@keyframes wipe { 0% { transform: scaleX(0); transform-origin: left; } 48% { transform: scaleX(1); transform-origin: left; } 52% { transform: scaleX(1); transform-origin: right; } 100% { transform: scaleX(0); transform-origin: right; } }
+
+/* ——— The gate and the arrival ——— */
+#gate { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 0; background: var(--ink); color: var(--bone); transition: opacity 1.2s var(--ease); }
+#gate[hidden] { display: none; }
+#gate.leaving { opacity: 0; pointer-events: none; }
+.gateMark { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--hair-strong); display: grid; place-items: center; margin-bottom: 34px; animation: gateIn 1.6s var(--ease) both; }
+.gateMark i { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); box-shadow: 0 0 24px #ff5a26; animation: breathe 3.4s ease-in-out infinite; }
+@keyframes breathe { 50% { transform: scale(0.6); opacity: 0.6; } }
+@keyframes gateIn { from { opacity: 0; transform: scale(0.8); } }
+.gateWord { font: 500 13px var(--mono); letter-spacing: 0.9em; margin-right: -0.9em; animation: gateIn 1.6s 0.2s var(--ease) both; }
+.gateSub { font: 400 10px var(--mono); letter-spacing: 0.34em; color: var(--dim); margin: 16px 0 0; animation: gateIn 1.6s 0.4s var(--ease) both; }
+.gateActions { display: flex; flex-direction: column; align-items: center; gap: 18px; margin-top: 8vh; animation: gateIn 1.6s 0.7s var(--ease) both; }
+#gate button { font: 500 11px var(--mono); letter-spacing: 0.34em; color: var(--bone); border-radius: 0; background: none; }
+#gate button#enterHouse { min-width: 0; height: auto; padding: 18px 44px 18px 48px; border: 1px solid var(--hair-strong); background: none; color: var(--bone); transition: background 0.35s var(--ease), color 0.35s, letter-spacing 0.5s var(--ease), border-color 0.35s; }
+#gate button#enterHouse::before { content: "[ "; color: var(--dim); }
+#gate button#enterHouse::after { content: " ]"; color: var(--dim); }
+#gate button#enterHouse:hover, #gate button#enterHouse:focus-visible { background: var(--bone); color: var(--ink); letter-spacing: 0.44em; outline: none; }
+#gate button#enterHouse:hover::before, #gate button#enterHouse:hover::after { color: var(--ink); }
+#gate button#skipArrival { font-size: 9.5px; color: var(--dim); padding: 6px 10px; letter-spacing: 0.26em; }
+#gate button#skipArrival:hover { color: var(--bone); background: none; }
+#gate label { position: absolute; left: 34px; bottom: 30px; margin: 0; display: flex; align-items: center; gap: 10px; font: 400 9.5px var(--mono); letter-spacing: 0.24em; color: var(--paper); cursor: pointer; }
+#gate input { appearance: none; width: 26px; height: 12px; border: 1px solid var(--hair-strong); border-radius: 10px; margin: 0; position: relative; cursor: pointer; }
+#gate input::after { content: ""; position: absolute; left: 2px; top: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--dim); transition: transform 0.3s var(--ease), background 0.3s; }
+#gate input:checked::after { transform: translateX(14px); background: var(--ember); }
+#gate small { position: absolute; right: 34px; bottom: 30px; font: 400 9.5px var(--mono); letter-spacing: 0.24em; color: var(--dim); margin: 0; }
+#cinema { position: fixed; inset: 0; z-index: 15; pointer-events: none; color: var(--bone); }
+#cinema[hidden] { display: none; }
+#cinema .cinemaWord { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; }
+#cinema .cinemaWord b { display: block; font: 500 13px var(--mono); letter-spacing: 0.9em; margin-right: -0.9em; opacity: 0; transition: opacity 1.6s; }
+#cinema .cinemaWord span { display: block; font: 400 10px var(--mono); letter-spacing: 0.36em; color: var(--paper); margin-top: 18px; opacity: 0; transition: opacity 1.6s; }
+#cinema .cinemaWord.a b, #cinema .cinemaWord.b span { opacity: 1; }
+#cinema .cinemaWord.out b, #cinema .cinemaWord.out span { opacity: 0; transition-duration: 1.1s; }
+#cinema .cinemaTitle { position: absolute; left: 5vw; right: 5vw; bottom: 16vh; font: 800 clamp(60px, 14vw, 280px) / 0.8 var(--display); font-stretch: 75%; letter-spacing: -0.035em; text-transform: uppercase; }
+#cinema .cinemaTitle span { display: block; clip-path: inset(0 0 100% 0); transform: translateY(0.3em); transition: clip-path 1.2s var(--ease), transform 1.2s var(--ease); padding-bottom: 0.06em; }
+#cinema .cinemaTitle span:nth-child(2) { transition-delay: 0.1s; }
+#cinema .cinemaTitle span:nth-child(3) { transition-delay: 0.2s; }
+#cinema.title .cinemaTitle span { clip-path: inset(0 0 -10% 0); transform: none; }
+#cinema.gone .cinemaTitle span { clip-path: inset(100% 0 0 0); transform: translateY(-0.2em); transition-duration: 0.7s; transition-timing-function: var(--ease-in-out); }
+#cinema .cinemaEnter { position: absolute; left: 5vw; bottom: 8vh; pointer-events: auto; font: 500 11px var(--mono); letter-spacing: 0.4em; color: var(--bone); padding: 12px 0; border-radius: 0; background: none; opacity: 0; transform: translateY(8px); transition: opacity 0.8s 0.5s, transform 0.8s 0.5s var(--ease), letter-spacing 0.5s var(--ease); }
+#cinema .cinemaEnter:hover { background: none; letter-spacing: 0.52em; }
+#cinema .cinemaEnter i { font-style: normal; color: var(--ember); }
+#cinema.title .cinemaEnter { opacity: 1; transform: none; }
+#cinema.gone .cinemaEnter { opacity: 0; transition-delay: 0s; pointer-events: none; }
+#cinema .cinemaSkip { position: absolute; right: 34px; bottom: 30px; pointer-events: auto; font: 400 9.5px var(--mono); letter-spacing: 0.26em; color: var(--dim); border-radius: 0; background: none; transition: opacity 0.5s, color 0.3s; }
+#cinema .cinemaSkip:hover { color: var(--bone); background: none; }
+#cinema.title .cinemaSkip { opacity: 0; pointer-events: none; }
+#cinema .cinemaMeta { position: absolute; right: 5vw; bottom: 8vh; font: 400 10px var(--mono); letter-spacing: 0.26em; color: var(--paper); text-align: right; line-height: 2; opacity: 0; transition: opacity 0.9s 0.7s; }
+#cinema.title .cinemaMeta { opacity: 0.8; }
+#cinema.gone .cinemaMeta { opacity: 0; transition-delay: 0s; }
+#houseFallback { position: fixed; left: 50%; bottom: 13px; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 12px; white-space: nowrap; font: 500 9.5px var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper); }
+#houseFallback[hidden] { display: none; }
+#houseFallback::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ember); }
+
+/* ——— AURA speaking ——— */
+#speech { position: fixed; left: 50%; bottom: 11vh; z-index: 8; width: min(760px, 86vw); transform: translate(-50%, 12px); text-align: center; color: var(--bone); opacity: 0; pointer-events: none; transition: opacity 0.5s, transform 0.7s var(--ease); }
+#speech.visible { opacity: 1; transform: translate(-50%, 0); }
+/* The words never take a click meant for the world behind them; only the chips and the question line do. */
+#speech.visible #speechChips button, #speech.visible #askForm { pointer-events: auto; }
+/* At an instrument the hands are in the lower half of the frame, so AURA speaks from above it. */
+body.focused #speech { bottom: auto; top: 8vh; }
+#speechFrom { font: 500 9.5px var(--mono); letter-spacing: 0.34em; color: var(--ember); margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+#speechFrom::before { content: ""; width: 9px; height: 9px; border: 1px solid var(--ember); border-radius: 50%; box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 9px var(--ember); }
+#speechLine { font: italic 400 clamp(20px, 2.1vw, 30px) / 1.28 var(--serif); text-shadow: 0 2px 26px #000d, 0 0 2px #0008; white-space: pre-wrap; max-height: 44vh; overflow: auto; scrollbar-width: none; }
+#speechLine::-webkit-scrollbar { display: none; }
+#speechLine b { font-weight: 400; font-style: normal; font-family: var(--mono); font-size: 0.6em; letter-spacing: 0.1em; color: var(--paper); }
+#speechChips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 10px; margin-top: 20px; }
+#speechChips button { font: 500 10px var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--bone); padding: 9px 14px; border: 1px solid var(--hair-strong); border-radius: 0; background: #0c0b0a99; transition: background 0.25s, color 0.25s, border-color 0.25s; }
+#speechChips button:hover, #speechChips button:focus-visible { background: var(--bone); color: var(--ink); border-color: var(--bone); outline: none; }
+#speechChips button.act { border-color: var(--ember); }
+#speechChips button.act::before { content: "↳ "; color: var(--ember); }
+#speechChips button.act:hover { background: var(--ember); border-color: var(--ember); }
+#speechChips button.act:hover::before { color: var(--ink); }
+#askForm { display: none; align-items: baseline; gap: 14px; margin-top: 22px; border-bottom: 1px solid var(--hair-strong); padding-bottom: 9px; text-align: left; }
+body.asking #askForm { display: flex; }
+#askForm label { font: 500 9.5px var(--mono); letter-spacing: 0.3em; color: var(--ember); white-space: nowrap; }
+#askInput { flex: 1; min-width: 0; background: none; border: 0; outline: none; color: var(--bone); font: italic 400 22px var(--serif); caret-color: var(--ember); padding: 0; }
+#askInput::placeholder { color: #efe7d85c; }
+#askForm kbd { font: 400 9px var(--mono); letter-spacing: 0.16em; color: var(--dim); white-space: nowrap; }
+
+/* ——— The phone ——— */
+#phone { position: fixed; right: 7vw; bottom: 0; z-index: 9; width: 322px; height: min(660px, 86vh); transform-origin: 50% 120%; transform: translateY(108%) rotate(9deg); transition: transform 0.75s var(--ease); pointer-events: none; perspective: 1200px; }
+body.phoneUp #phone { transform: translateY(-5vh) rotate(0deg); pointer-events: auto; }
+.phoneBody { position: absolute; inset: 0; border-radius: 40px; background: linear-gradient(150deg, #2a2623, #0d0c0b 38%, #151312); box-shadow: 0 40px 90px #000c, 0 0 0 1px #3a3530, inset 0 0 0 2px #050505, inset 0 0 0 3px #3f3a34; transform: rotateY(var(--tiltY, 0deg)) rotateX(var(--tiltX, 0deg)); transition: transform 0.25s ease-out; padding: 11px; }
+.phoneBody::before { content: ""; position: absolute; right: -3px; top: 150px; width: 3px; height: 58px; border-radius: 0 2px 2px 0; background: #2b2723; }
+.phoneBody::after { content: ""; position: absolute; left: 50%; top: 20px; width: 64px; height: 18px; margin-left: -32px; border-radius: 12px; background: #050505; z-index: 3; }
+.phoneScreen { position: relative; width: 100%; height: 100%; border-radius: 30px; overflow: hidden; background: var(--ink); color: var(--bone); font-family: var(--mono); display: flex; flex-direction: column; }
+.phoneStatus { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px 0; font: 500 9px var(--mono); letter-spacing: 0.14em; height: 40px; flex: none; }
+.phoneStatus i { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+body.playing .phoneStatus i { background: var(--ember); }
+.phoneView { flex: 1; min-height: 0; overflow: auto; padding: 14px 22px 20px; scrollbar-width: none; animation: phoneIn 0.45s var(--ease); }
+.phoneView::-webkit-scrollbar { display: none; }
+@keyframes phoneIn { from { opacity: 0; transform: translateY(12px); } }
+.phoneBar { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 10px 22px 16px; border-top: 1px solid var(--hair); }
+.phoneBar button, .phoneView button { font: 500 9.5px var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--bone); border-radius: 0; background: none; }
+.phoneBar button { padding: 8px 0; color: var(--paper); }
+.phoneBar button:hover { color: var(--bone); background: none; }
+.phoneMini { display: flex; align-items: center; gap: 9px; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phoneMini i { flex: none; width: 6px; height: 6px; border-radius: 50%; border: 1px solid var(--bone); }
+body.playing .phoneMini i { background: var(--ember); border-color: var(--ember); }
+.phoneTitle { font: italic 400 34px / 1 var(--serif); margin: 6px 0 4px; letter-spacing: -0.01em; }
+.phoneEyebrow { font: 500 9px var(--mono); letter-spacing: 0.3em; color: var(--dim); }
+.phoneHome { list-style: none; margin: 18px 0 0; padding: 0; }
+.phoneHome li { border-top: 1px solid var(--hair); }
+.phoneHome li:last-child { border-bottom: 1px solid var(--hair); }
+.phoneHome button { width: 100%; display: flex; align-items: baseline; gap: 14px; padding: 13px 0; text-align: left; font: 800 25px / 1 var(--display); font-stretch: 75%; letter-spacing: -0.01em; transition: padding 0.3s var(--ease), color 0.2s; }
+.phoneHome button small { font: 400 9px var(--mono); letter-spacing: 0.16em; color: var(--dim); width: 18px; }
+.phoneHome button em { margin-left: auto; font: 400 9px var(--mono); letter-spacing: 0.12em; color: var(--dim); font-style: normal; text-transform: none; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phoneHome button:hover, .phoneHome button:focus-visible { padding-left: 10px; color: var(--ember); background: none; outline: none; }
+.phoneCover { width: 100%; aspect-ratio: 1; display: block; background: var(--char); margin: 14px 0 16px; }
+.phoneTrack { font: 800 30px / 0.92 var(--display); font-stretch: 75%; text-transform: uppercase; letter-spacing: -0.02em; }
+.phoneArtist { font: 400 9.5px var(--mono); letter-spacing: 0.16em; color: var(--paper); margin-top: 8px; text-transform: uppercase; }
+.phoneScrub { position: relative; height: 22px; margin: 16px 0 4px; cursor: pointer; }
+.phoneScrub::before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 1px; background: var(--hair-strong); }
+.phoneScrub i { position: absolute; left: 0; top: 9px; height: 3px; background: var(--ember); width: var(--at, 0%); }
+.phoneScrub i::after { content: ""; position: absolute; right: -4px; top: -3px; width: 9px; height: 9px; border-radius: 50%; background: var(--bone); }
+.phoneTimes { display: flex; justify-content: space-between; font: 400 9px var(--mono); letter-spacing: 0.12em; color: var(--dim); }
+.phoneTransport { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 6px; }
+.phoneTransport button { padding: 10px 4px; }
+.phoneTransport .phonePlay { width: 62px; height: 62px; border-radius: 50%; border: 1px solid var(--bone); font-size: 10px; letter-spacing: 0.14em; transition: background 0.25s, color 0.25s; }
+.phoneTransport .phonePlay:hover { background: var(--bone); color: var(--ink); }
+.phoneRow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 0; border-top: 1px solid var(--hair); text-align: left; text-transform: none !important; letter-spacing: 0 !important; }
+.phoneRow canvas { flex: none; width: 44px; height: 44px; background: var(--char); }
+.phoneRow strong { display: block; font: 800 17px / 1 var(--display); font-stretch: 75%; text-transform: uppercase; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phoneRow small { display: block; font: 400 9px var(--mono); letter-spacing: 0.12em; color: var(--dim); margin-top: 5px; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phoneRow > span { min-width: 0; flex: 1; }
+.phoneRow:hover strong { color: var(--ember); }
+.phoneRow:hover { background: none; }
+.phoneRow.current strong { color: var(--ember); }
+.phoneRow em { flex: none; font: 400 9px var(--mono); letter-spacing: 0.14em; color: var(--dim); font-style: normal; }
+.phoneActions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.phoneActions button, .phoneChoice button { padding: 9px 11px; border: 1px solid var(--hair-strong); transition: background 0.2s, color 0.2s, border-color 0.2s; }
+.phoneActions button:hover, .phoneChoice button:hover { background: var(--bone); color: var(--ink); border-color: var(--bone); }
+.phoneActions button.primary { border-color: var(--ember); }
+.phoneActions button.primary:hover { background: var(--ember); border-color: var(--ember); }
+.phoneChoice { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 18px; }
+.phoneChoice button[aria-pressed="true"] { background: var(--bone); color: var(--ink); border-color: var(--bone); }
+.phoneLabel { display: block; font: 500 9px var(--mono); letter-spacing: 0.26em; color: var(--dim); margin: 18px 0 6px; text-transform: uppercase; }
+.phoneRange { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.phoneRange input[type="range"] { flex: 1; appearance: none; height: 18px; background: none; accent-color: var(--ember); }
+.phoneRange input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: var(--hair-strong); }
+.phoneRange input[type="range"]::-webkit-slider-thumb { appearance: none; width: 11px; height: 11px; margin-top: -5px; border-radius: 50%; background: var(--bone); }
+.phoneRange output { font: 400 9px var(--mono); color: var(--paper); width: 38px; text-align: right; }
+.phoneSwitch { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--hair); font: 500 9.5px var(--mono); letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; }
+.phoneSwitch input { appearance: none; width: 28px; height: 13px; border: 1px solid var(--hair-strong); border-radius: 10px; position: relative; margin: 0; cursor: pointer; }
+.phoneSwitch input::after { content: ""; position: absolute; left: 2px; top: 2px; width: 7px; height: 7px; border-radius: 50%; background: var(--dim); transition: transform 0.25s var(--ease), background 0.25s; }
+.phoneSwitch input:checked::after { transform: translateX(15px); background: var(--ember); }
+.phoneNote { font: 400 9px / 1.8 var(--mono); letter-spacing: 0.08em; color: var(--dim); margin: 10px 0; }
+.phoneView textarea { width: 100%; min-height: 320px; background: none; border: 0; outline: none; resize: none; color: var(--bone); font: italic 400 19px / 1.45 var(--serif); padding: 0; margin-top: 12px; caret-color: var(--ember); }
+.phoneMap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 16px 0; }
+.phoneMap button { aspect-ratio: 1; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; padding: 8px; border: 1px solid var(--hair); text-align: left; transition: background 0.2s, color 0.2s; }
+.phoneMap button b { font: 400 8.5px var(--mono); color: var(--dim); }
+.phoneMap button span { font: 800 13.5px / 0.95 var(--display); font-stretch: 75%; letter-spacing: 0; }
+.phoneMap button.here { border-color: var(--ember); }
+.phoneMap button.here b { color: var(--ember); }
+.phoneMap button:hover { background: var(--bone); color: var(--ink); }
+.phoneSleeves { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
+.phoneSleeves button { padding: 0; border: 1px solid transparent; }
+.phoneSleeves button[aria-pressed="true"] { border-color: var(--ember); }
+.phoneSleeves canvas { width: 100%; display: block; }
+.phoneSteps { display: grid; grid-template-columns: 34px repeat(16, 1fr); gap: 2px; margin: 4px 0; align-items: center; }
+.phoneSteps span { font: 400 8px var(--mono); letter-spacing: 0.08em; color: var(--dim); }
+.phoneSteps button { aspect-ratio: 0.62; padding: 0; background: #1e1b18; border-radius: 0; }
+.phoneSteps button:nth-child(4n + 2) { background: #2a2622; }
+.phoneSteps button.on { background: var(--bone); }
+.phoneSteps button.now { box-shadow: inset 0 -3px 0 var(--ember); }
+.phoneKeys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 12px; touch-action: none; }
+.phoneKeys button { aspect-ratio: 1; border: 1px solid var(--hair-strong); font: 500 10px var(--mono); transition: background 0.1s; touch-action: none; }
+.phoneKeys button.down { background: var(--ember); color: var(--ink); border-color: var(--ember); }
+
+/* ——— Sheets: every remaining window speaks the same language ——— */
+dialog { border: 1px solid var(--hair); border-radius: 0; background: var(--ink); color: var(--bone); box-shadow: 0 50px 140px #000c; font-family: var(--mono); }
+dialog::backdrop,
+#roomMap::backdrop,
+#ideaPanel::backdrop,
+#recordPanel::backdrop,
+#masterPanel::backdrop,
+#exportPanel::backdrop,
+#memoryPanel::backdrop,
+.activityDialog::backdrop { background: #0c0b0ac7; backdrop-filter: none; }
+dialog[open] { animation: sheetIn 0.5s var(--ease); }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(18px); clip-path: inset(0 0 30% 0); } to { clip-path: inset(0 0 0 0); } }
+#ideaPanel,
+#recordPanel,
+#masterPanel,
+#exportPanel,
+#memoryPanel,
+#roomMap { background: var(--ink); color: var(--bone); border: 1px solid var(--hair); border-radius: 0; font-family: var(--mono); box-shadow: 0 50px 140px #000c; padding: 0 34px 30px; }
+.houseDialogHead, .dialogHeader { border-bottom: 1px solid var(--hair); font: 500 9.5px var(--mono); letter-spacing: 0.3em; color: var(--dim); }
+.houseDialogHead button, .dialogHeader button { color: var(--paper); border-radius: 0; }
+#roomMap h2,
+#ideaPanel h2,
+#recordPanel h2,
+#masterPanel h2,
+#exportPanel h2,
+#memoryPanel h2,
+.dialogHeader h2,
+.hubHero h1 { font: italic 400 44px / 1 var(--serif); letter-spacing: -0.01em; color: var(--bone); margin: 30px 0 18px; }
+#ideaPanel > p, #recordPanel > p, #masterPanel > p, #exportPanel > p, #memoryPanel > p, .houseNote, .hubHero p { font: 400 10.5px / 1.9 var(--mono); letter-spacing: 0.04em; color: var(--paper); }
+dialog textarea, dialog input[type="text"], dialog input:not([type]), dialog select, #memoryName { background: none; border: 0; border-bottom: 1px solid var(--hair-strong); border-radius: 0; color: var(--bone); font: italic 400 20px var(--serif); padding: 10px 0; outline: none; width: 100%; }
+dialog select { font: 500 11px var(--mono); letter-spacing: 0.1em; }
+dialog select option { background: var(--ink); }
+/* The sheets' last controls in the old green, brought into the palette. */
+.houseSetting select, #recordDevice { background: none; border: 0; border-bottom: 1px solid var(--hair-strong); border-radius: 0; padding: 10px 0; color: var(--bone); font: 500 11px var(--mono); letter-spacing: 0.1em; }
+.houseNote { color: var(--dim) !important; }
+.recordActions output { color: var(--paper); }
+dialog textarea:focus, dialog input:focus { border-bottom-color: var(--ember); }
+dialog button { border-radius: 0; }
+.housePrimary, .ideaChoices button, .recordActions button, #listeningMixer, #terraceProject, .hubActions button, dialog .primary { font: 500 10px var(--mono); letter-spacing: 0.2em; text-transform: uppercase; color: var(--bone); background: none; border: 1px solid var(--hair-strong); border-radius: 0; padding: 14px 18px; margin: 8px 8px 0 0; transition: background 0.25s, color 0.25s, border-color 0.25s; }
+.housePrimary:hover, .ideaChoices button:hover, .recordActions button:hover, #listeningMixer:hover, #terraceProject:hover, .hubActions button:hover, dialog .primary:hover { background: var(--bone); color: var(--ink); border-color: var(--bone); }
+#createFoundation, #beginRecording, #terraceExport, #keepMemory, #newBlank { border-color: var(--ember); }
+#createFoundation:hover, #beginRecording:hover, #terraceExport:hover, #keepMemory:hover, #newBlank:hover { background: var(--ember); border-color: var(--ember); color: var(--ink); }
+.houseSetting, .setting { border-top: 1px solid var(--hair); font: 500 10px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--bone); }
+.houseSetting small, .setting small { color: var(--dim); text-transform: none; letter-spacing: 0.04em; }
+.masterReadouts strong { font: 800 64px var(--display); font-stretch: 75%; color: var(--bone); }
+.masterReadouts span, .masterReadouts small { font: 400 9.5px var(--mono); letter-spacing: 0.2em; color: var(--dim); }
+.exportFormat { font: 800 64px var(--display); font-stretch: 75%; color: var(--bone); border-color: var(--hair); }
+.exportFormat span { font: 400 9.5px var(--mono); letter-spacing: 0.2em; color: var(--dim); }
+#recordWave { background: var(--char); border: 1px solid var(--hair); }
+.memoryVersion, .recentProject { border-radius: 0; border: 0; border-top: 1px solid var(--hair); background: none; color: var(--bone); }
+.memoryVersion strong, .recentProject strong { font: 800 22px var(--display); font-stretch: 75%; text-transform: uppercase; }
+.memoryVersion small, .recentProject small { font: 400 9.5px var(--mono); letter-spacing: 0.12em; color: var(--dim); }
+.memoryVersion:hover strong, .recentProject:hover strong { color: var(--ember); }
+#hub { background: var(--ink); }
+.hubHero { background: none; }
+.hubHero .eyebrow, .recentTitle { font: 500 9.5px var(--mono); letter-spacing: 0.3em; color: var(--dim); }
+#command { background: var(--ink); border: 1px solid var(--hair-strong); }
+.commandSearch input { font: italic 400 24px var(--serif); border: 0; }
+#commandResults button { font: 500 11px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; border-radius: 0; border-top: 1px solid var(--hair); }
+#commandResults button:hover, #commandResults button:focus { background: var(--bone); color: var(--ink); }
+#commandResults kbd, .commandSearch kbd, .dialogHint { font-family: var(--mono); color: var(--dim); border-radius: 0; }
+#toast { border-radius: 0; background: var(--bone); color: var(--ink); font: 500 10.5px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; border: 0; box-shadow: none; padding: 12px 18px; }
+.activityDialog { background: var(--ink); color: var(--bone); border: 1px solid var(--hair); border-radius: 0; font: 400 13px / 1.6 var(--font); }
+.activityDialog button { border-radius: 0; border: 1px solid var(--hair-strong); background: none; color: var(--bone); font: 500 10px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+.activityDialog button:hover { background: var(--bone); color: var(--ink); }
+.activityDialog .activityPrimary { background: none; border-color: var(--ember); color: var(--bone); }
+.activityDialog .activityPrimary:hover { background: var(--ember); color: var(--ink); }
+.activityHeader, .activityFooter, .coachLessons, .coachConversation, .lessonTask, .chillGame .activityFooter { background: none; border-color: var(--hair); color: var(--bone); }
+.activityHeader small, .lessonEyebrow, .lessonTask small, .coachMode { font: 500 9.5px var(--mono); letter-spacing: 0.26em; color: var(--dim); }
+.activityHeader h2, .coachLesson h3 { font: italic 400 38px / 1 var(--serif); color: var(--bone); }
+.coachLessons button { border: 0; border-top: 1px solid var(--hair); text-transform: none; letter-spacing: 0; font: 600 14px var(--font); }
+.coachLessons button[aria-current] { background: none; border-color: var(--hair); color: var(--ember); }
+.coachLessons small, .coachLessons button > span:first-child, .coachConnection, .lessonFeedback, .lessonQuiz p, .activityFooter > div > span, .chillGame .activityFooter > div > span, .gameControls p, .gameScore { color: var(--dim); }
+.lessonTask { border-left: 1px solid var(--ember); }
+.lessonQuiz { border-color: var(--hair); }
+.lessonQuiz button { text-transform: none; letter-spacing: 0; font: 400 14px var(--font); }
+.lessonQuiz button[aria-pressed] { background: none; border-color: var(--ember); }
+.coachMessage, .coachMessage.user { background: none; border: 0; border-top: 1px solid var(--hair); border-radius: 0; }
+.coachMessage small { font: 500 9px var(--mono); letter-spacing: 0.2em; color: var(--dim); text-transform: uppercase; }
+.coachMessage p { font: italic 400 17px / 1.4 var(--serif); color: var(--bone); }
+.coachMessage.user p { font: 400 12px / 1.6 var(--mono); font-style: normal; color: var(--paper); }
+.coachConversation textarea { background: none; border: 0; border-bottom: 1px solid var(--hair-strong); border-radius: 0; color: var(--bone); font: italic 400 18px var(--serif); }
+.chillGame { background: var(--ink); color: var(--bone); border-color: var(--hair); }
+.chillGame button { background: none; color: var(--bone); border-color: var(--hair-strong); }
+.gameScore b { font: 800 26px var(--display); font-stretch: 75%; color: var(--bone); }
+
+/* ——— The precise editor, in the same hand ——— */
+.productionMode .app { inset: 54px 22px 42px; border: 1px solid var(--hair); border-radius: 0; box-shadow: 0 40px 120px #000b; animation: sheetIn 0.55s var(--ease); }
+.productionMode #houseWorld { filter: none; opacity: 0.22; }
+.app, .app * { border-radius: 0 !important; }
+.app input[type="range"]::-webkit-slider-thumb { border-radius: 50% !important; }
+.app .brand { font: 800 19px var(--display); font-stretch: 75%; letter-spacing: 0.02em; }
+.app .brand svg { display: none; }
+.app .brand .version, .app label, .app .panelTitle, .app .libraryHeader, .app .sectionName small, .app .workspaceLabel, .app footer, .app .trackRuler, .app .readout label, .app .engineStatus, .app .masterControl, .app kbd, .app .badge, .app .tap { font-family: var(--mono) !important; letter-spacing: 0.12em; }
+.app .readout strong, .app .readout input { font-family: var(--display); font-stretch: 75%; font-weight: 700; }
+.app .play { background: var(--bone); color: var(--ink); }
+.app .statusDot { background: var(--ember); }
+.app .export { border: 1px solid var(--ember); background: none; color: var(--bone); font-family: var(--mono); letter-spacing: 0.14em; text-transform: uppercase; font-size: 10px; }
+.app .export:hover { background: var(--ember); color: var(--ink); }
+.app .soundOrb { display: none; }
+.app .playhead { background: var(--ember); }
+#productionRoomLabel { font: 500 9.5px var(--mono); letter-spacing: 0.24em; color: var(--paper); }
+#productionRoomLabel button { font: 500 9.5px var(--mono); letter-spacing: 0.18em; text-transform: uppercase; border-radius: 0; color: var(--bone); background: none; border: 0; }
+#productionRoomLabel button:hover { color: var(--ember); background: none; }
+#productionRoomLabel kbd { font-family: var(--mono); border-radius: 0; border-color: var(--hair-strong); }
+/* The workbench, the lessons and the console still hang their buttons on the old frame; only the editor's own row is shown. */
+.houseTopRight { display: none; }
+#productionRoomLabel { gap: 28px; }
+#productionRoomLabel button { padding: 6px 0; }
+/* A hidden HUD takes no clicks. */
+body:not(.houseMode) #houseHud button { pointer-events: none; }
+.productionMode #productionTop { display: flex; }
+#productionTop { display: none; position: fixed; left: 22px; right: 22px; top: 0; height: 54px; z-index: 5; align-items: center; justify-content: space-between; font: 500 9.5px var(--mono); letter-spacing: 0.3em; color: var(--paper); }
+#productionTop b { font-weight: 500; color: var(--bone); display: flex; align-items: center; gap: 12px; }
+#productionTop b::before { content: ""; width: 9px; height: 9px; border: 1px solid var(--bone); border-radius: 50%; box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 9px var(--ember); }
+
+/* ——— Small screens: the phone becomes the experience ——— */
+body.mobile #phone { right: 0; left: 0; width: auto; height: min(74vh, 640px); transform: translateY(calc(100% - 64px)); perspective: none; pointer-events: auto; transform-origin: 50% 100%; }
+body.mobile.phoneUp #phone { transform: translateY(0); }
+body.mobile .phoneBody { border-radius: 22px 22px 0 0; padding: 0; background: var(--ink); box-shadow: 0 -20px 60px #000a, 0 -1px 0 var(--hair-strong); transform: none; }
+body.mobile .phoneBody::before, body.mobile .phoneBody::after { display: none; }
+body.mobile .phoneScreen { border-radius: 22px 22px 0 0; }
+body.mobile .phoneStatus { height: 64px; padding: 0 22px; cursor: pointer; border-bottom: 1px solid var(--hair); }
+body.mobile .phoneStatus::before { content: ""; position: absolute; left: 50%; top: 8px; width: 36px; height: 3px; margin-left: -18px; border-radius: 2px; background: var(--hair-strong); }
+body.mobile .phoneView { padding: 14px 22px calc(20px + env(safe-area-inset-bottom)); }
+body.mobile .auraMark { left: 20px; top: calc(18px + env(safe-area-inset-top)); }
+body.mobile .nowLine, body.mobile .hint, body.mobile #lockHint { display: none; }
+body.mobile .touchNavigation { bottom: calc(84px + env(safe-area-inset-bottom)); }
+body.mobile #speech { bottom: calc(96px + env(safe-area-inset-bottom)); }
+/* At an instrument the lower frame belongs to the hands: the prompt reads from the top, and AURA speaks beneath it. */
+body.mobile.focused #prompt { top: calc(24px + env(safe-area-inset-top)); bottom: auto; }
+body.mobile.focused #speech { top: calc(62px + env(safe-area-inset-top)); bottom: auto; }
+/* Held upright, sixteen steps are two rows of eight under a thumb; on its side the phone is wide enough for all of them, and for two octaves in a row. */
+@media (orientation: portrait) {
+  body.mobile .phoneSteps { grid-template-columns: 38px repeat(8, 1fr); gap: 3px; margin: 9px 0; }
+  body.mobile .phoneSteps span { grid-row: span 2; }
+  body.mobile .phoneSteps button { aspect-ratio: 1.2; }
+}
+@media (orientation: landscape) {
+  body.mobile #phone { height: 96vh; }
+  body.mobile .phoneTitle { font-size: 26px; margin-bottom: 8px; }
+  body.mobile .phoneSteps button { aspect-ratio: 1.5; }
+  body.mobile .phoneKeys { grid-template-columns: repeat(8, 1fr); }
+  body.mobile .phoneKeys button { aspect-ratio: 1.6; }
+}
+body.mobile #moment { padding-bottom: 22vh; }
+body.mobile.phoneUp .touchNavigation { display: none; }
+@media (max-width: 720px) {
+  #moment .momentTitle, #cinema .cinemaTitle { font-size: clamp(54px, 19vw, 120px); }
+  #cinema .cinemaMeta { display: none; }
+  #speechLine { font-size: 19px; }
+  .productionMode .app { inset: 46px 0 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #moment .momentTitle span, #cinema .cinemaTitle span, #phone, dialog[open], .phoneView { transition-duration: 0.01s !important; animation-duration: 0.01s !important; }
+  .gateMark i, body.playing .auraMark i, body.playing .nowLine i { animation: none; }
+}

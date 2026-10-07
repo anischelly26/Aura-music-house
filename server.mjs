@@ -1,8 +1,11 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { handleCoach } from './src/coach-api.js';
-const root = path.dirname(new URL(import.meta.url).pathname);
+// fileURLToPath keeps Windows drive letters and spaces intact; URL.pathname does not.
+const root = path.dirname(fileURLToPath(import.meta.url));
+const port = Number(process.argv[2] || process.env.PORT) || 3000;
 const mime = {
   ".html": "text/html",
   ".js": "text/javascript",
@@ -11,6 +14,9 @@ const mime = {
   ".svg": "image/svg+xml",
   ".webp": "image/webp",
   ".glb": "model/gltf-binary",
+  ".woff2": "font/woff2",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
 };
 http
   .createServer(async (req, res) => {
@@ -41,6 +47,4 @@ http
       res.end("Not found");
     }
   })
-  .listen(Number(process.env.PORT) || 3000, "0.0.0.0", () =>
-    console.log("AURA http://localhost:" + (process.env.PORT || 3000)),
-  );
+  .listen(port, "0.0.0.0", () => console.log("AURA http://localhost:" + port));

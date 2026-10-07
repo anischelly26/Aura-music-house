@@ -417,6 +417,10 @@ export class AudioEngine extends EventTarget {
     this.metronome = false;
     this.g = null;
     this.worker = null;
+    // Optional loop region in beats; null loops the whole arrangement.
+    this.loopStart = null;
+    this.loopEnd = null;
+    this.bands = { bass: 0, mid: 0, high: 0, level: 0, wave: new Float32Array(256), at: -1 };
   }
   async init(resume = true) {
     // Keep this before any await: mobile browsers require the original tap.
@@ -434,6 +438,19 @@ export class AudioEngine extends EventTarget {
       const hp=this.ctx.createBiquadFilter(),lp=this.ctx.createBiquadFilter();hp.type="highpass";hp.frequency.value=300;lp.frequency.value=3400;
       this.output.connect(hp).connect(lp).connect(this.monitorPhone).connect(this.ctx.destination);
       this.setMonitor(this.monitorMode||"stereo",true);
+      // One always-on tap feeds every visual in the house: playback, held notes and auditions.
+      this.tap = this.ctx.createAnalyser();
+      this.tap.fftSize = 1024;
+      this.tap.smoothingTimeConstant = 0.72;
+      const quiet = this.ctx.createGain();
+      quiet.gain.value = 0;
+      this.projectOutput.connect(this.tap).connect(quiet).connect(this.ctx.destination);
+      this.tapBins = new Uint8Array(this.tap.frequencyBinCount);
+      this.tapWave = new Float32Array(this.tap.fftSize);
+      // Interface and room sounds bypass the project output, so they never reach an export or a meter.
+      this.sfx = this.ctx.createGain();
+      this.sfx.gain.value = this.sfxLevel ?? 0.5;
+      this.sfx.connect(this.ctx.destination);
       this.ctx.onstatechange = () => {
         if (["suspended", "interrupted", "closed"].includes(this.ctx.state)) {
           if (this.playing) this.pause();
@@ -478,8 +495,64 @@ export class AudioEngine extends EventTarget {
     this.assets = staged;
   }
 
-  async play(p, position = this.position) {
+  /** Decodes a project's samples without replacing the open session's buffers. */
+  async decodeAssets(p) {
+    const staged = new Map();
+    const entries = Object.entries(p.assets || {});
+    if (!entries.length) return staged;
+    await this.init(false);
+    for (const [id, a] of entries)
+      staged.set(id, await this.ctx.decodeAudioData(base64ToBytes(a.data)));
+    return staged;
+  }
+  setLoopRegion(start, end) {
+    const valid = Number.isFinite(start) && Number.isFinite(end) && end - start >= 0.25;
+    this.loopStart = valid ? Math.max(0, start) : null;
+    this.loopEnd = valid ? end : null;
+    this.dispatchEvent(new Event("transport"));
+    if (this.playing) return this.refresh(this.p);
+  }
+  /** Smoothed band energies (0–1) for subtle room reactions. Cheap enough for every frame. */
+  analysis(now = performance.now()) {
+    const b = this.bands;
+    if (!this.tap || this.ctx.state !== "running") {
+      b.bass *= 0.9; b.mid *= 0.9; b.high *= 0.9; b.level *= 0.9;
+      return b;
+    }
+    if (now - b.at < 12) return b;
+    const dt = Math.min(0.1, Math.max(0.001, (now - b.at) / 1000));
+    b.at = now;
+    this.tap.getByteFrequencyData(this.tapBins);
+    this.tap.getFloatTimeDomainData(this.tapWave);
+    const bin = this.ctx.sampleRate / this.tap.fftSize, bins = this.tapBins;
+    const band = (lo, hi) => {
+      const a = Math.max(1, Math.round(lo / bin)), z = Math.min(bins.length - 1, Math.round(hi / bin));
+      let sum = 0;
+      for (let i = a; i <= z; i++) sum += bins[i];
+      return sum / ((z - a + 1) * 255);
+    };
+    const follow = (key, value, attack, release) => {
+      const rate = value > b[key] ? attack : release;
+      b[key] += (value - b[key]) * (1 - Math.exp(-dt * rate));
+    };
+    follow("bass", Math.min(1, band(30, 140) * 1.25), 60, 7);
+    follow("mid", Math.min(1, band(300, 2400) * 1.5), 40, 6);
+    follow("high", Math.min(1, band(4500, 12000) * 2.2), 50, 9);
+    let sum = 0;
+    const step = this.tapWave.length / b.wave.length;
+    for (let i = 0; i < b.wave.length; i++) {
+      const v = this.tapWave[Math.floor(i * step)];
+      b.wave[i] = v;
+      sum += v * v;
+    }
+    follow("level", Math.min(1, Math.sqrt(sum / b.wave.length) * 3.2), 45, 5);
+    return b;
+  }
+
+  async play(p, position = this.position, options = {}) {
     if (this.playing) return;
+    if (options.assets) this.playAssets = options.assets;
+    else if (!options.keepAssets) this.playAssets = null;
     const request = this.playRequest = (this.playRequest || 0) + 1;
     await this.init();
     if (request !== this.playRequest || this.playing) return;
@@ -488,7 +561,7 @@ export class AudioEngine extends EventTarget {
     this.startBeat = this.position;
     this.origin = this.ctx.currentTime + 0.045;
     this.g = graph(this.ctx, p, this.projectOutput);
-    this.list = events(p, this.assets);
+    this.list = events(p, this.playAssets || this.assets);
     this.eventIndex = 0;
     this.clickIndex = Math.ceil(this.startBeat);
     this.nextLoop = null;
@@ -570,15 +643,19 @@ export class AudioEngine extends EventTarget {
   }
   tick() {
     if (!this.playing) return;
-    const end=projectBeats(this.p),spb=60/this.p.bpm,horizon=this.ctx.currentTime+.18;
+    const total=projectBeats(this.p),region=this.loop&&this.loopEnd!==null&&this.loopStart<total-.25;
+    const end=region?Math.min(total,this.loopEnd):total,from=region?this.loopStart:0;
+    const spb=60/this.p.bpm,horizon=this.ctx.currentTime+.18;
     this.scheduleCycle(this,end,horizon);
     const boundary=this.origin+(end-this.startBeat)*spb;
     // Schedule the next pass before its deadline on the same graph. A loop
     // must not stop playback or insert another 45 ms transport lead-in.
     if(this.loop&&horizon>boundary){
       if(!this.nextLoop){
-        this.nextLoop={origin:boundary,startBeat:0,eventIndex:0,clickIndex:0};
-        scheduleAutomation(this.g,this.p,0,boundary);
+        let first=0;
+        while(first<this.list.length&&this.list[first].beat<from)first++;
+        this.nextLoop={origin:boundary,startBeat:from,eventIndex:first,clickIndex:Math.ceil(from)};
+        scheduleAutomation(this.g,this.p,from,boundary);
       }
       this.scheduleCycle(this.nextLoop,end,horizon);
     }
@@ -638,7 +715,8 @@ export class AudioEngine extends EventTarget {
     const was = this.playing;
     this.stop(false);
     this.position = Math.max(0, Math.min(beat, projectBeats(p) - 0.001));
-    if (was) await this.play(p, this.position);
+    if (was) await this.play(p, this.position, { keepAssets: true });
+    else this.dispatchEvent(new Event("transport"));
   }
   async noteOn(t,pitch,velocity=.7) {
     await this.init();
@@ -660,7 +738,7 @@ export class AudioEngine extends EventTarget {
       },Math.ceil((trackTail(t)+.2)*1000));
     }};
   }
-  async audition(t, pitch) {
+  async audition(t, pitch, velocity = 0.7) {
     await this.init();
     const p = {
         master: 0.65,
@@ -671,7 +749,7 @@ export class AudioEngine extends EventTarget {
       this.ctx,
       g,
       t,
-      { pitch, velocity: 0.7 },
+      { pitch, velocity },
       this.ctx.currentTime + 0.005,
       0.35,
     );
@@ -683,6 +761,19 @@ export class AudioEngine extends EventTarget {
       for (const n of g.tracks.values())
         for (const node of Object.values(n)) node.disconnect();
     }, Math.ceil((.4+Math.max(2,trackTail(t)))*1000));
+  }
+  /** Auditions a decoded sample through the project output; a new preview replaces the last. */
+  async previewBuffer(buffer) {
+    if (!buffer) return;
+    await this.init();
+    try { this.previewSource?.stop(); } catch {}
+    const source = this.ctx.createBufferSource(), gain = this.ctx.createGain();
+    source.buffer = buffer;
+    gain.gain.value = 0.8;
+    source.connect(gain).connect(this.projectOutput);
+    source.start(0, 0, Math.min(buffer.duration, 12));
+    source.onended = () => { source.disconnect(); gain.disconnect(); if (this.previewSource === source) this.previewSource = null; };
+    this.previewSource = source;
   }
   setMonitor(mode,initial=false) {
     this.monitorMode=mode;
@@ -698,7 +789,7 @@ export class AudioEngine extends EventTarget {
     this.stop(false);
     this.p = p;
     this.position = Math.min(beat, projectBeats(p) - 0.001);
-    if (was) await this.play(p, this.position);
+    if (was) await this.play(p, this.position, { keepAssets: true });
   }
   async render(p, options = {}) {
     const tail=Math.max(2,...p.tracks.map(trackTail));

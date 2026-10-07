@@ -20,21 +20,14 @@
 .touchLook {max-width:175px;text-align:right;padding-bottom:5px;}
 .touchLook p {margin:0 0 12px;color:#eee6d7;font-size:12px;line-height:1.6;text-shadow:0 1px 6px #000;}
 #touchInteract {min-height:44px;padding:10px 16px;border:1px solid #ded0b86b;border-radius:4px;background:#14241cdf;color:#eee6d7;font-size:14px;}
-.houseTouch .roomEditorial {bottom:calc(244px + env(safe-area-inset-bottom));}
-.houseTouch .houseBottom {bottom:calc(18px + env(safe-area-inset-bottom));}
-.houseTouch .houseBottom .movementHint {display:none;}
-.houseTouch #interactionHint {bottom:calc(224px + env(safe-area-inset-bottom));left:auto;right:20px;transform:none;max-width:175px;min-width:0;flex-direction:column;gap:8px;}
-@media (max-height:650px) and (orientation:portrait) {
-  .houseTouch .roomEditorial h1 {font-size:28px;margin:8px 0;}
-  .houseTouch .roomEditorial p {font-size:13px;line-height:1.5;margin-bottom:14px;}
-}
+
 @media (max-height:520px) and (orientation:landscape) {
-  .houseTouch .roomEditorial {left:max(170px,calc(150px + env(safe-area-inset-left)));bottom:82px;max-width:calc(100% - 365px);}
-  .houseTouch .roomEditorial h1 {font-size:27px;margin:8px 0;}
-  .houseTouch .roomEditorial p,.houseTouch .roomEditorial>span,.houseTouch #interactionHint {display:none;}
-  .houseTouch .roomEditorial>button {min-width:0;min-height:44px;padding-bottom:5px;}
+  
+  
+  
+  
   .houseTouch .touchNavigation {bottom:calc(60px + env(safe-area-inset-bottom));}
-  .houseTouch .houseBottom {bottom:calc(8px + env(safe-area-inset-bottom));}
+  
 }
 #intro {
   display: none !important;
@@ -77,14 +70,7 @@
   filter: blur(3px);
   opacity: 0.45;
 }
-.productionMode #houseHud .roomEditorial,
-.productionMode #houseHud .houseBottom,
-.productionMode #interactionHint {
-  display: none;
-}
-.productionMode #houseTop {
-  opacity: 1;
-}
+
 #houseHud {
   position: fixed;
   inset: 0;
@@ -98,31 +84,7 @@
 #houseHud select {
   pointer-events: auto;
 }
-.houseTop {
-  height: 80px;
-  padding: 27px 38px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(#13201850, transparent);
-}
-.houseBrand {
-  display: flex;
-  gap: 19px;
-  align-items: center;
-  font-size: 15px;
-  letter-spacing: 3px;
-  font-weight: 500;
-  padding: 0;
-  text-shadow: 0 2px 20px #0005;
-}
-.houseBrand span {
-  font-size: 7px;
-  font-weight: 400;
-  letter-spacing: 2.6px;
-  border-left: 1px solid #e8e4cc50;
-  padding-left: 18px;
-}
+
 .houseTopRight {
   display: flex;
   gap: 21px;
@@ -140,7 +102,6 @@
   padding: 8px 0;
 }
 .houseTopRight kbd,
-.houseBottom kbd,
 #productionRoomLabel kbd {
   background: #15261b40;
   border: 1px solid #d6d0b029;
@@ -149,137 +110,7 @@
   font-size: 7px;
   padding: 2px 4px;
 }
-.roomEditorial {
-  position: absolute;
-  left: 42px;
-  bottom: 119px;
-  max-width: 500px;
-  pointer-events: none;
-  filter: drop-shadow(0 2px 10px #0004);
-  transition: opacity 0.3s;
-}
-.roomEditorial > span {
-  font-size: 8px;
-  letter-spacing: 2.3px;
-  color: #d6c7a6;
-}
-.roomEditorial h1 {
-  font:
-    400 47px Georgia,
-    "Times New Roman",
-    serif;
-  letter-spacing: -1.7px;
-  margin: 13px 0;
-  color: #f2ebdc;
-}
-.roomEditorial p {
-  font-size: 11px;
-  color: #d1cdbb;
-  line-height: 1.8;
-  margin: 0 0 22px;
-}
-.roomEditorial > button {
-  font-size: 10px;
-  border-bottom: 1px solid #c4b58c70;
-  padding: 0 0 9px;
-  border-radius: 0;
-  text-align: left;
-  min-width: 220px;
-}
-.roomEditorial > button span {
-  float: right;
-  margin-left: 25px;
-}
-.houseBottom {
-  position: absolute;
-  bottom: 25px;
-  left: 40px;
-  right: 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 15px;
-}
-.houseBottom > div {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.houseBottom button {
-  font-size: 10px;
-  color: var(--house-paper);
-  padding: 7px 3px;
-}
-.houseBottom button#housePlay {
-  font-size: 13px;
-}
-.houseBottom button#housePlay span {
-  font-size: 10px;
-  margin-left: 8px;
-}
-.houseBottom > div > span {
-  font-size: 8px;
-  color: #d0c9b2;
-  font-variant-numeric: tabular-nums;
-}
-.houseBottom .monitorStatus {
-  font-size: 6px;
-  letter-spacing: 1.5px;
-  border-left: 1px solid #cac3a64a;
-  padding-left: 16px;
-  color: #a6b49c;
-}
-.movementHint {
-  font-size: 7px;
-  color: #d1cfb8;
-  letter-spacing: 1px;
-}
-.movementHint span {
-  font-size: 7px;
-  color: #969f92;
-  margin-left: -9px;
-  letter-spacing: 0;
-}
-.movementHint button {
-  font-size: 8px !important;
-  color: #c0c5b1 !important;
-}
-.movementHint #houseLock {
-  border-bottom: 1px solid #bfc8ad50;
-  border-radius: 0;
-}
-#interactionHint {
-  position: absolute;
-  left: 50%;
-  bottom: 115px;
-  transform: translateX(-50%);
-  align-items: center;
-  gap: 22px;
-  padding: 11px 18px;
-  background: #1a231b80;
-  border: 1px solid #d1c09730;
-  backdrop-filter: blur(12px);
-  border-radius: 3px;
-  pointer-events: auto;
-  min-width: 200px;
-}
-#interactionHint:not([hidden]) {
-  display: flex;
-}
-#interactionName {
-  font-size: 10px;
-  color: #dfd9c6;
-}
-#interactButton {
-  font-size: 8px;
-  white-space: nowrap;
-  color: #cfc7ad;
-}
-#interactButton kbd {
-  margin-left: 7px;
-  background: #ffffff10;
-  font-size: 7px;
-}
+
 #arrival {
   position: fixed;
   inset: 0;
@@ -294,16 +125,7 @@
     opacity 0.6s,
     visibility 0.6s;
 }
-#arrival.departed {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-.arrivalEyebrow {
-  font-size: 8px;
-  letter-spacing: 2.7px;
-  color: #cec5a5;
-}
+
 #arrival h1 {
   font:
     400 68px Georgia,
@@ -386,13 +208,7 @@
   letter-spacing: 0;
   padding: 3px 0;
 }
-.productionMode #houseHud .houseTop {
-  padding: 14px 31px;
-  height: 52px;
-}
-.productionMode #houseProject {
-  display: none;
-}
+
 #recordIndicator {
   position: fixed;
   left: 50%;
@@ -432,7 +248,6 @@
   font-variant-numeric: tabular-nums;
 }
 #roomMap,
-#houseSettings,
 #ideaPanel,
 #recordPanel,
 #masterPanel,
@@ -451,7 +266,6 @@
   width: 780px;
 }
 #roomMap::backdrop,
-#houseSettings::backdrop,
 #ideaPanel::backdrop,
 #recordPanel::backdrop,
 #masterPanel::backdrop,
@@ -477,7 +291,6 @@
   padding: 0 5px;
 }
 #roomMap h2,
-#houseSettings h2,
 #ideaPanel h2,
 #recordPanel h2,
 #masterPanel h2,
@@ -725,24 +538,7 @@
 #memoryList {
   margin-top: 18px;
 }
-.memoryRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  text-align: left;
-  border-top: 1px solid #62765150;
-  padding: 16px 0;
-}
-.memoryRow strong {
-  font-weight: 400;
-  font-size: 11px;
-  color: #c8bca2;
-}
-.memoryRow small {
-  font-size: 8px;
-  color: #91a680;
-}
+
 .houseMode dialog {
   z-index: 20;
 }
@@ -864,15 +660,7 @@
   border-color: #89966c60;
   color: #ded5bc;
 }
-#houseModeButton:focus-visible,
-#roomWorkButton:focus-visible,
-#houseMapButton:focus-visible {
-  outline: 1px solid #d6c499;
-  outline-offset: 6px;
-}
-.houseMoving .roomEditorial {
-  opacity: 0;
-}
+
 .houseNoMotion *,
 .houseNoMotion *:before {
   animation: none !important;
@@ -889,36 +677,19 @@
   }
 }
 @media (max-width: 950px) {
-  .houseTop {
-    padding: 25px;
-  }
+  
   .houseTopRight {
     gap: 15px;
   }
   .houseTopRight > span {
     display: none;
   }
-  .houseBrand span {
-    font-size: 6px;
-    letter-spacing: 1.5px;
-  }
-  .houseBottom {
-    left: 25px;
-    right: 25px;
-  }
-  .houseBottom .movementHint {
-    gap: 10px;
-  }
-  .houseBottom .monitorStatus {
-    display: none;
-  }
-  .roomEditorial {
-    left: 28px;
-    bottom: 125px;
-  }
-  .roomEditorial h1 {
-    font-size: 40px;
-  }
+  
+  
+  
+  
+  
+  
   .productionMode .app {
     inset: 58px 10px 35px;
   }
@@ -926,77 +697,33 @@
     left: 12px;
     right: 12px;
   }
-  .houseBottom #houseLock {
-    display: none;
-  }
+  
 }
 @media (max-width: 600px) {
-  .houseTop {
-    padding: 22px 18px;
-  }
-  .houseBrand {
-    font-size: 12px;
-    letter-spacing: 2px;
-  }
-  .houseBrand span {
-    display: none;
-  }
+  
+  
+  
   .houseTopRight {
     gap: 15px;
   }
   .houseTopRight button {
     font-size: 9px;
   }
-  #houseSettingsButton {
-    display: none;
-  }
+  
   .houseTopRight kbd {
     display: none;
   }
-  .roomEditorial {
-    left: 23px;
-    bottom: 130px;
-    right: 23px;
-  }
-  .roomEditorial h1 {
-    font-size: 35px;
-    letter-spacing: -1px;
-  }
-  .roomEditorial p {
-    font-size: 10px;
-    max-width: 280px;
-  }
-  .roomEditorial > span {
-    font-size: 6px;
-    letter-spacing: 1.5px;
-  }
-  .roomEditorial > button {
-    min-width: 200px;
-    font-size: 9px;
-  }
-  .houseBottom {
-    left: 22px;
-    right: 22px;
-    bottom: 25px;
-    align-items: flex-end;
-  }
-  .houseBottom > div {
-    gap: 11px;
-  }
-  .houseBottom .movementHint {
-    font-size: 0;
-    gap: 0;
-  }
-  .houseBottom .movementHint span,
-  .houseBottom #houseLock {
-    display: none;
-  }
-  .houseBottom #houseCommand {
-    font-size: 0 !important;
-  }
-  .houseBottom #houseCommand kbd {
-    font-size: 7px;
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   #arrival {
     padding: 0 25px;
     background: linear-gradient(90deg, #142018a0, #14201825);
@@ -1005,10 +732,7 @@
     font-size: 53px;
     letter-spacing: -2px;
   }
-  .arrivalEyebrow {
-    font-size: 6px;
-    letter-spacing: 1.4px;
-  }
+  
   #arrival p {
     font-size: 11px;
   }
@@ -1025,26 +749,22 @@
     border-right: 0;
     border-radius: 0;
   }
-  .productionMode .houseTop {
-    padding: 14px 13px;
-  }
+  
   #roomMap,
-  #houseSettings,
-  #ideaPanel,
-  #recordPanel,
-  #masterPanel,
-  #exportPanel,
-  #memoryPanel {
+#ideaPanel,
+#recordPanel,
+#masterPanel,
+#exportPanel,
+#memoryPanel {
     width: 94vw;
     padding: 0 20px 24px;
   }
   #roomMap h2,
-  #houseSettings h2,
-  #ideaPanel h2,
-  #recordPanel h2,
-  #masterPanel h2,
-  #exportPanel h2,
-  #memoryPanel h2 {
+#ideaPanel h2,
+#recordPanel h2,
+#masterPanel h2,
+#exportPanel h2,
+#memoryPanel h2 {
     font-size: 27px;
   }
   #roomGrid {
@@ -1074,11 +794,7 @@
     font-size: 9px;
     min-width: 120px;
   }
-  #interactionHint {
-    bottom: 80px;
-    max-width: 90vw;
-    padding: 8px 12px;
-  }
+  
   .masterReadouts {
     gap: 20px;
   }
@@ -1140,9 +856,7 @@
   opacity: 1;
   animation: none;
 }
-.productionMode #interactionHint:not([hidden]) {
-  display: none;
-}
+
 .productionMode #houseWorld {
   opacity: 0.3;
   visibility: hidden;
@@ -1161,14 +875,10 @@
     #17251bd9
   );
 }
-body:has(#arrival:not([hidden])) .roomEditorial,
-body:has(#arrival:not([hidden])) .houseBottom {
-  visibility: hidden;
-}
+
 .productionMode .play {
   background: #c8b48e !important;
 }
-.productionMode .editorTab.active,
 .productionMode .workspaceNav button.active {
   color: #d4bf98;
   background: #c8b48e15;
@@ -1182,10 +892,7 @@ body:has(#arrival:not([hidden])) .houseBottom {
 .productionMode .key {
   background: #1a231e;
 }
-.productionMode .inspectorLabel,
-.productionMode .sectionLabel {
-  color: #aeb298;
-}
+
 /* v0.3: legible studio tools and a live arrival passage. */
 .cinematicArrival {position:fixed;inset:0;z-index:100;pointer-events:none;}
 .arrivalVeil {position:absolute;inset:0;background:#07100b;}
@@ -1195,13 +902,12 @@ body:has(#arrival:not([hidden])) .houseBottom {
 .skipCinematic {position:absolute;right:32px;bottom:30px;pointer-events:auto;border:1px solid #dcccb55e;background:#132119d9;color:#ede4d3;padding:12px 18px;border-radius:4px;font-size:14px;}
 .cinematicArrival:before,.cinematicArrival:after {content:'';position:absolute;left:0;right:0;height:5.5vh;background:#0a130ef2;}
 .cinematicArrival:before {top:0;}.cinematicArrival:after {bottom:0;}
-body.houseMoving .houseTop,body.houseMoving .houseBottom {opacity:.2;}
-.houseTopRight button,.houseBottom button,#roomWorkButton,#interactButton {font-size:14px;}
-.houseTopRight kbd,.houseBottom kbd,#interactButton kbd {font-size:12px;}
-#roomEyebrow,.houseBrand span,.movementHint {font-size:12px;}
-#roomDescription {font-size:16px;line-height:1.6;}
+
+.houseTopRight button {font-size:14px;}
+.houseTopRight kbd {font-size:12px;}
+
 .houseSetting {font-size:14px;}.houseSetting small,.houseNote {font-size:12px;line-height:1.6;}
-.houseTopRight {gap:8px;}.houseTopRight #houseProject {font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.houseTopRight {gap:8px;}
 #productionWorkbenchButton {margin-left:auto;border:1px solid #5d7466;background:#243b2d;color:#e5dcca;padding:6px 14px;border-radius:3px;font-size:13px;}
 .drumGrid {overflow:auto;max-height:calc(100% - 42px);}.drumRow {min-height:36px;}.drumRow>button:first-child {font-size:12px;min-width:95px;}
 .workbench {width:min(1080px,calc(100vw - 48px));max-height:calc(100dvh - 48px);padding:0;background:#eee9df;color:#21362a;border:1px solid #b1b6a2;border-radius:8px;box-shadow:0 24px 100px #00130970;overflow:hidden;}
@@ -1233,35 +939,24 @@ body.houseMoving .houseTop,body.houseMoving .houseBottom {opacity:.2;}
 .wbMeters {display:grid;grid-template-columns:1fr 1fr;gap:12px;}.wbMeters>div {padding:14px;border:1px solid #bcc8b3;background:#e4eadd;border-radius:4px;}.wbMeters small {font-size:11px;letter-spacing:.04em;color:#6c7f60;display:block;}.wbMeters strong {font:26px Georgia,serif;display:block;margin-top:10px;}
 #wbSpectrum {width:100%;height:150px;border-radius:4px;margin-top:18px;}#wbPhase {width:100%;height:150px;border-radius:4px;margin-top:8px;}#wbMeasured {font-size:13px;line-height:1.7;color:#5a714f;padding:14px;background:#dde6d3;border-radius:4px;}
 .wbFooter {display:flex;align-items:center;gap:10px;padding:14px 24px;border-top:1px solid #c1cdb7;background:#e1e6d9;font-size:12px;}.wbFooter span {flex:1;line-height:1.6;}.wbFooter button:last-child {background:#294830;color:#f1eddd;border-color:#294830;}
-@media(max-width:800px){.houseTopRight #houseProject{display:none;}.houseTopRight button{font-size:12px;padding:8px;}.houseBrand span{display:none;}.workbench{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);}.wbHeader{padding:18px;}.wbBody{padding:18px;max-height:calc(100dvh - 285px);}.wbTwo,.wbSamples{grid-template-columns:1fr;gap:24px;}.wbTwo>section+section{border-left:0;padding-left:0;border-top:1px solid #c5cfbc;padding-top:24px;}.wbContext{padding:10px 18px;}.wbContext>span{display:none;}.wbEffectParams{grid-template-columns:1fr 1fr;}.wbChainIntro{flex-wrap:wrap;}.wbChainIntro>div{flex-basis:100%;}.wbEffect header{flex-wrap:wrap;}.wbHeader h2{font-size:27px;}.wbFooter{padding:12px;font-size:11px;}.wbFooter span{max-height:42px;overflow:auto;}.wbTabs{padding:8px 10px 0;}.wbTabs button{font-size:13px;}.houseBottom .monitorStatus{display:none;}}
-#houseHud .houseBottom button,#houseHud .movementHint button {font-size:13px!important;}
-#houseHud .houseBottom button#housePlay span {font-size:13px;}
-#houseHud .houseBottom>div>span,#houseHud .movementHint span {font-size:12px;}
-#houseHud .houseBottom .monitorStatus {font-size:10px;}
-@media(max-width:800px){#houseHud .movementHint{display:none;}#houseHud .houseBottom>div>span{font-size:12px;}}
+@media(max-width:800px){.houseTopRight button{font-size:12px;padding:8px;}.workbench{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);}.wbHeader{padding:18px;}.wbBody{padding:18px;max-height:calc(100dvh - 285px);}.wbTwo,.wbSamples{grid-template-columns:1fr;gap:24px;}.wbTwo>section+section{border-left:0;padding-left:0;border-top:1px solid #c5cfbc;padding-top:24px;}.wbContext{padding:10px 18px;}.wbContext>span{display:none;}.wbEffectParams{grid-template-columns:1fr 1fr;}.wbChainIntro{flex-wrap:wrap;}.wbChainIntro>div{flex-basis:100%;}.wbEffect header{flex-wrap:wrap;}.wbHeader h2{font-size:27px;}.wbFooter{padding:12px;font-size:11px;}.wbFooter span{max-height:42px;overflow:auto;}.wbTabs{padding:8px 10px 0;}.wbTabs button{font-size:13px;}}
+
 .wbPerformance{border-top:1px solid #c7d0bf;margin-top:28px;padding-top:24px;}.wbPerformance p{max-width:none;}.wbPerformance .wbActions{align-items:center;}.wbKeyboard{display:flex;gap:3px;margin-top:18px;height:100px;}.wbKeyboard button{flex:1;padding:60px 0 8px;font-size:10px;background:#faf7ee;min-width:0;}.wbKeyboard button.black{background:#263e2d;color:#e7e6d8;height:70px;padding-top:35px;}.wbKeyboard button:active{background:#c5d5b7;}
 .wbRecovery {display:flex!important;justify-content:space-between;align-items:center;gap:20px;width:100%;margin:10px 0;text-align:left;}.wbRecovery strong{font-size:14px;font-weight:500;}.wbRecovery small{font-size:12px;color:#6a7d60;}
 #workbench button.active{color:#f0ead9!important;}#workbench input[type=range]::-webkit-slider-thumb{background:#58784f;border-color:#58784f;}#workbench input[type=range]::-moz-range-thumb{background:#58784f;border-color:#58784f;}
 .workbench[open]{display:flex;flex-direction:column;}#workbench .wbHeader,#workbench .wbTabs,#workbench .wbContext,#workbench .wbFooter{flex-shrink:0;}#workbench .wbBody{flex:1;min-height:0;max-height:none;}#workbench .wbPerformance{scroll-margin-top:0;}
 
 /* Readable controls and labels over bright architecture. */
-.houseTopRight button,.houseBottom button,.roomEditorial > button {font-size:14px;min-height:36px;}
-.houseTopRight > span,.houseBottom > div > span,.houseBrand span {font-size:12px;}
-.roomEditorial > span {font-size:12px;letter-spacing:1.3px;}
-.roomEditorial p {font-size:14px;color:#eeeadd;}
-.roomEditorial > button {color:#faf4e8;}
+.houseTopRight button {font-size:14px;min-height:36px;}
+.houseTopRight > span {font-size:12px;}
+
 .wbControl:focus-within {outline:2px solid #526c4e;outline-offset:5px;border-radius:3px;}
 @media(max-width:700px){
  .houseTopRight {gap:4px;} .houseTopRight button {font-size:12px;min-height:40px;}
- .roomEditorial > span {font-size:11px;}.roomEditorial p,.roomEditorial > button {font-size:14px;}
+ 
  .productionMode .workspaceNav button,.productionMode .editorTabs button {font-size:12px;min-height:36px;}
  .productionMode .editorTabs {overflow-x:auto;min-height:40px;}.productionMode .editorTabs > div {display:flex;white-space:nowrap;}
  .productionMode #productionRoomLabel {gap:10px;flex-wrap:wrap;min-height:34px;height:auto;font-size:11px;}
  .productionMode #productionRoomLabel button {font-size:12px;min-height:30px;}
 }
-#houseSoundHelp {
-  font-size: .875rem;
-  line-height: 1.55;
-  color: #c9d2be;
-  margin-top: 20px;
-}
+

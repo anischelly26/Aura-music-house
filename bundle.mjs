@@ -10,8 +10,15 @@ const result = await build({
   write: false,
 });
 let html = await readFile("index.html", "utf8");
-for (const file of ["style.css", "house.css", "activities.css"]) {
-  const css = await readFile("src/" + file, "utf8");
+// The portable file carries its typefaces with it.
+const inlineFonts = async (css) => {
+  for (const [whole, name] of css.matchAll(/url\("\.\.\/assets\/fonts\/([\w.-]+\.woff2)"\)/g))
+    css = css.replace(whole, 'url("data:font/woff2;base64,' + (await readFile("assets/fonts/" + name)).toString("base64") + '")');
+  return css;
+};
+html = html.replace(/\s*<link rel="preload" href="assets\/fonts\/[^>]*>/g, "");
+for (const file of ["style.css", "house.css", "activities.css", "aura.css"]) {
+  const css = await inlineFonts(await readFile("src/" + file, "utf8"));
   html = html.replace(
     new RegExp('<link rel="stylesheet" href="src/' + file + '"\\s*/?\\s*>'),
     () => "<style>" + css + "</style>",

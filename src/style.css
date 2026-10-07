@@ -5,8 +5,8 @@
   --line: #2c2d36;
   --muted: #8f92a3;
   --text: #dddfe9;
-  --accent: #aaa7ff;
-  --mint: #69d6be;
+  --accent: #ff5a26;
+  --mint: #e8c58c;
   --browser: 222px;
   --inspector: 264px;
   --editor: 314px;
@@ -81,7 +81,7 @@ input[type="range"]::-webkit-slider-thumb {
   height: 10px;
   background: var(--accent);
   border-radius: 50%;
-  box-shadow: 0 0 0 3px #aaa7ff12;
+  box-shadow: 0 0 0 3px #ff5a2612;
 }
 input[type="checkbox"] {
   accent-color: var(--accent);
@@ -182,7 +182,7 @@ kbd {
 .export {
   margin-left: 9px;
   border: 1px solid #4b4868;
-  background: #aaa7ff16;
+  background: #ff5a2616;
   color: #cdcaff;
   font-size: 11px;
   padding: 8px 12px;
@@ -216,7 +216,7 @@ kbd {
   width: 42px;
   height: 38px;
   background: var(--accent);
-  box-shadow: 0 0 25px #aaa7ff14;
+  box-shadow: 0 0 25px #ff5a2614;
   color: #15151f;
   margin-right: 5px;
 }
@@ -247,7 +247,7 @@ kbd {
 }
 .active {
   color: var(--accent) !important;
-  background: #aaa7ff10;
+  background: #ff5a2610;
 }
 .readout {
   display: flex;
@@ -563,7 +563,7 @@ kbd {
 .soundOrb i {
   width: 2px;
   height: 12px;
-  background: #aaa7ff70;
+  background: #ff5a2670;
   border-radius: 4px;
 }
 .soundOrb i:nth-child(2n) {
@@ -647,7 +647,7 @@ kbd {
   position: relative;
 }
 .trackRow.selected {
-  background: #aaa7ff09;
+  background: #ff5a2609;
 }
 .trackName {
   font-weight: 500;
@@ -834,12 +834,7 @@ canvas {
   flex: 1;
   scrollbar-width: thin;
 }
-.velocityHint {
-  font-size: 8px;
-  color: #757991;
-  padding: 7px 12px;
-  border-top: 1px solid #30313b;
-}
+
 .emptyEditor {
   padding: 34px;
   color: #858a9e;
@@ -854,7 +849,7 @@ canvas {
 .emptyEditor button {
   margin-top: 15px;
   border: 1px solid #454259;
-  color: #aaa7ff;
+  color: #ff5a26;
 }
 .drumGrid {
   padding: 20px;
@@ -1160,7 +1155,7 @@ canvas {
   margin-top: 13px;
 }
 .proposal {
-  background: #aaa7ff0a;
+  background: #ff5a260a;
   border: 1px solid #474360;
   padding: 12px;
   margin-top: 12px;
@@ -1187,7 +1182,7 @@ canvas {
   padding: 6px;
 }
 .proposalButtons .primary {
-  background: #aaa7ff;
+  background: #ff5a26;
   color: #181823;
 }
 .noteVelocity {
@@ -1280,7 +1275,7 @@ dialog::backdrop {
 }
 .hubHero {
   padding: 38px 35px;
-  background: radial-gradient(ellipse at 90% 30%, #aaa7ff16, transparent 55%);
+  background: radial-gradient(ellipse at 90% 30%, #ff5a2616, transparent 55%);
 }
 .eyebrow {
   font-size: 8px;
@@ -1309,7 +1304,7 @@ dialog::backdrop {
   padding: 12px 14px;
 }
 .hubActions button:first-child {
-  background: #aaa7ff;
+  background: #ff5a26;
   color: #1a1928;
   border-color: transparent;
 }
@@ -1378,7 +1373,7 @@ dialog::backdrop {
 #downloadProject {
   margin: 0 26px 26px;
   padding: 12px 15px;
-  background: #aaa7ff;
+  background: #ff5a26;
   color: #181723;
 }
 #command {
@@ -1393,7 +1388,7 @@ dialog::backdrop {
 }
 .commandSearch > span {
   font-size: 25px;
-  color: #aaa7ff;
+  color: #ff5a26;
 }
 .commandSearch input {
   flex: 1;
@@ -1435,13 +1430,7 @@ dialog::backdrop {
   animation: introOut 0.5s 2.7s forwards;
   perspective: 700px;
 }
-.intro-word {
-  font-size: 48px;
-  letter-spacing: 19px;
-  margin-left: 19px;
-  color: #ddd8ff;
-  animation: wordIn 1.3s ease both;
-}
+
 .intro p {
   font-size: 8px;
   letter-spacing: 4px;
@@ -1458,43 +1447,7 @@ dialog::backdrop {
 .intro button span {
   margin-left: 20px;
 }
-.orb {
-  width: 170px;
-  height: 120px;
-  position: relative;
-  margin-bottom: 35px;
-  transform-style: preserve-3d;
-  animation: orbIn 2.5s ease forwards;
-}
-.orbit {
-  position: absolute;
-  inset: 0;
-  border: 1px solid #a6a1ff80;
-  border-radius: 50%;
-  box-shadow:
-    0 0 20px #a6a1ff15,
-    inset 0 0 30px #a6a1ff05;
-}
-.o1 {
-  transform: rotateY(45deg) rotateX(65deg);
-}
-.o2 {
-  transform: rotateY(-45deg) rotateX(65deg);
-  border-color: #69d6be70;
-}
-.o3 {
-  transform: rotateX(73deg);
-}
-.intro-wave {
-  position: absolute;
-  top: 50%;
-  height: 2px;
-  width: 100%;
-  background: #aaa7ff;
-  box-shadow: 0 0 30px #aaa7ff;
-  transform: scaleX(0.3);
-  animation: waveIn 2s ease forwards;
-}
+
 .intro.hidden {
   display: none;
 }

@@ -1,320 +1,241 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { walkRoute } from "./navigation.js";
-import { Arrival } from "./arrival.js";
 import { TouchNavigation } from "./touch-navigation.js";
 import { Architecture } from "./architecture.js";
-import { ModelAssets } from './model-assets.js';
-import { rooms, roomById, roomAt, roomRoute } from "./layout.js";
-import { newProject, noteName, presets } from "../project.js";
+import { ModelAssets } from "./model-assets.js";
+import { setAnisotropy } from "./materials.js";
+import { rooms, roomById, roomAt, views } from "./layout.js";
+import { makeTrack } from "../project.js";
 import { foundationFromText } from "../foundation.js";
-import {
-  checkpoint,
-  listMemories,
-  download,
-  portableProject,
-} from "../storage.js";
+import { checkpoint, listMemories, download, portableProject } from "../storage.js";
+import { PlayerController, EYE } from "../world/player.js";
+import { CameraDirector } from "../world/camera.js";
+import { InteractionManager } from "../world/interaction.js";
+import { LightingManager } from "../world/lighting.js";
+import { PerformanceManager, Finish } from "../world/quality.js";
+import { ScreenPainter } from "../world/screens.js";
+import { SoundDesign } from "../world/sound.js";
+import { Arrival } from "../world/intro.js";
+import { Hud } from "../world/hud.js";
 
 const $ = (s) => document.querySelector(s);
-const views = {
-  gallery: [0, 24, 0, 2, 10],
-  idea: [-16, 25, -20, 1.3, 16],
-  instrument: [-21.4, 1.3, -22.05, 1.3, -1.75],
-  rhythm: [16, 4.5, 21, 0.6, -1],
-  record: [16, 25, 24, 1.3, 20],
-  arrange: [-14, -14, -28, 2.2, -20],
-  living: [4, 6.7, 0, 2, -4.3],
-  master: [0, -19.6, 0, 2.2, -26],
-  terrace: [15, -15, 23, 2, -23],
-};
-const labels = {
-  projects: "Open your project collection",
-  new: "Begin an empty project",
-  note: "Play a piano key",
-  instrument: "Open this instrument",
-  step: "Toggle this rhythm step",
-  tool: "Open precise tools",
-  lens: "Inspect the mix · local measurements",
-  track: "Select this voice in the mixer",
-  channel: "Open this mixer channel",
-  memory: "Open musical memory",
-  game: "Play Sundown Rally · your music keeps playing",
-  coach: "Learn music with the coach",
-};
 const fmt = (s) => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
 const db = (v) => (v > 0 ? (20 * Math.log10(v)).toFixed(1) : "−∞");
+const moveKeys = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 
-/** This layer navigates and presents the existing music project. It owns no audio graph. */
+/**
+ * The world manager. It assembles the house's systems — body, camera, interaction,
+ * light, sound, displays — around the existing project and engine, and owns no
+ * audio graph of its own.
+ */
 export class MusicHouse {
   constructor(studio, recording) {
     this.studio = studio;
     this.recording = recording;
+    this.events = new EventTarget();
     this.mode = "house";
     this.currentRoom = "gallery";
     this.keys = new Set();
     this.pointer = new THREE.Vector2(0, 0);
-    this.raycaster = new THREE.Raycaster();
     this.velocity = new THREE.Vector2();
+    this.devices = [];
     this.memories = [];
     this.entered = false;
-    this.lastScreen = 0;
-    this.lastAudio = 0;
-    this.metrics = { peak: 0, rms: 0, tracks: new Map() };
-    this.frames = 0;
-    this.profileFrames=0;this.profileStart=performance.now();
-    this.reduced =
-      localStorage.getItem("aura-house-reduced") === "true" ||
-      matchMedia("(prefers-reduced-motion: reduce)").matches;
-    this.quality = localStorage.getItem("aura-house-quality") || "balanced";
-    this.speed = Number(localStorage.getItem("aura-walk-speed")) || 3.3;
-    this.sensitivity = Number(localStorage.getItem("aura-look-sensitivity")) || .0025;
+    this.listening = false;
+    this.overlayOpen = false;
+    this.fovOffset = 0;
+    this.lastMetrics = 0;
+    this.metrics = { peak: 0, rms: 0, tracks: new Map(), spectrum: new Uint8Array(0) };
+    this.fontCallbacks = [];
+    this.touch = matchMedia("(any-pointer: coarse)").matches && !matchMedia("(any-pointer: fine)").matches;
+    this.reduced = localStorage.getItem("aura-house-reduced") === "true" || matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this.speed = Number(localStorage.getItem("aura-walk-speed")) || 3.1;
+    this.sensitivity = Number(localStorage.getItem("aura-look-sensitivity")) || 0.0022;
     this.smoothing = Number(localStorage.getItem("aura-movement-smoothing")) || 10;
     this.fieldOfView = Number(localStorage.getItem("aura-fov")) || 62;
+    this.canvas = $("#world");
+    this.dialogs = [...document.querySelectorAll("dialog")];
+    this.sound = new SoundDesign(studio.engine);
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog("#cbbfa9", 85, 240);
-    this.camera = new THREE.PerspectiveCamera(
-      this.fieldOfView,
-      innerWidth / innerHeight,
-      0.08,
-      450,
-    );
+    this.camera = new THREE.PerspectiveCamera(this.fieldOfView, innerWidth / innerHeight, 0.06, 450);
     this.camera.rotation.order = "YXZ";
-    this.camera.position.set(11, 3.1, 42);
-    this.lookAt(-3, 2.9, 28);
+    this.camera.position.set(0, 3.1, 70);
+    this.lookAt(0, 2.9, 31);
     try {
-      this.renderer = new THREE.WebGLRenderer({
-        canvas: $("#world"),
-        antialias: true,
-        alpha: false,
-        powerPreference: "high-performance",
-      });
+      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      this.renderer.toneMappingExposure = 1.25;
+      this.renderer.setClearColor("#0c0b0a", 1);
     } catch {
       this.renderer = null;
     }
+    this.performance = new PerformanceManager(this.renderer, (soft) => this.applyQuality(soft));
     if (this.renderer) {
-      const environment = new RoomEnvironment();
-      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      const environment = new RoomEnvironment(), pmrem = new THREE.PMREMGenerator(this.renderer);
       this.environment = pmrem.fromScene(environment, 0.04).texture;
       environment.dispose();
       pmrem.dispose();
-      this.scene.environmentIntensity = 0.35;
     }
-    this.scene.add(new THREE.HemisphereLight("#e8e8d6", "#746e58", 1.2));
-    const sun = new THREE.DirectionalLight("#fff0d2", 3.2);
-    sun.position.set(-35, 70, 28);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, {
-      left: -48,
-      right: 48,
-      top: 48,
-      bottom: -48,
-      near: 0.5,
-      far: 160,
-    });
-    sun.shadow.bias = -0.0003;
-    this.scene.add(sun);
-    this.sun = sun;
     this.architecture = new Architecture(this.scene);
-    this.updateLighting();
-    this.applyQuality();
+    this.architecture.world = this;
+    this.player = new PlayerController(this);
+    this.director = new CameraDirector(this);
+    this.interaction = new InteractionManager(this);
+    this.hud = new Hud(this);
+    this.touchControls = new TouchNavigation(this);
+    if (this.renderer) {
+      this.lighting = new LightingManager(this);
+      this.screens = new ScreenPainter(this);
+      this.applyQuality();
+      this.models = new ModelAssets(this);
+      this.modelsReady = this.models.load();
+      // Every room's shaders are built once, behind the gate, so a doorway is never the moment a program compiles.
+      this.modelsReady.then(() => this.renderer?.compileAsync(this.scene, this.camera)).catch(() => {});
+    }
     this.resize();
     this.bind();
-    this.touchControls = new TouchNavigation(this);
     this.updateProject();
-    if(this.renderer){this.models=new ModelAssets(this);this.modelsReady=this.models.load();}
     this.studio.registerCommands(
-      rooms
-        .map((r) => ["Go to " + r.name + " · " + r.tool, r.number + " / Shift: instant", () => this.goRoom(r.id)])
-        .concat([
-          ["Keep a musical memory", "", () => this.openMemory()],
-          ["Return to the house", "Ctrl ↵", () => this.returnHouse()],
-        ]),
+      rooms.map((r) => ["Go to " + r.name, r.number.slice(1) + " · Shift: instant", () => this.goRoom(r.id)]).concat([
+        ["Keep a version of this project", "", () => this.openMemory()],
+        ["Return to the house", "Ctrl ↵", () => this.returnHouse()],
+        ["Listening mode", "L", () => this.setListening(!this.listening)],
+        ["Open the phone", "Tab", () => this.phone?.toggle(true)],
+        ["Ask AURA", "T", () => this.mentor?.ask()],
+      ]),
     );
     this.studio.store.addEventListener("change", () => this.updateProject());
     window.addEventListener("resize", () => this.resize());
     window.addEventListener("blur", () => this.resetNavigationInput());
-    document.addEventListener("visibilitychange", () => {
-      this.resetNavigationInput();
-      this.touchControls.refresh();
-    });
-    $("#world").addEventListener("webglcontextlost", (e) => {
-      e.preventDefault();
-      this.fallback();
-    });
+    document.addEventListener("visibilitychange", () => { this.resetNavigationInput(); this.touchControls.refresh(); });
+    this.canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); this.fallback(); });
     this.last = performance.now();
     if (this.renderer) this.renderer.setAnimationLoop((t) => this.frame(t));
     else this.fallback();
-    if (this.renderer && localStorage.getItem("aura-intro") === "off")
-      this.enter(true);
+    document.fonts?.ready.then(() => this.fontsLoaded());
+  }
+  // ——— Compatibility: the preset is still readable as `quality`. ———
+  get quality() {
+    return this.performance;
+  }
+  get fps() {
+    return this.performance.fps;
+  }
+  get lookYawValue() {
+    return this.lookYaw;
+  }
+  whenFontsReady(fn) {
+    if (!this.fontsDone) this.fontCallbacks.push(fn);
+  }
+  /** Lettering drawn before the typefaces arrived is redrawn once, in the right hand. */
+  fontsLoaded() {
+    if (this.fontsDone) return;
+    this.fontsDone = true;
+    if (window.auraFontsEarly) return;
+    for (const fn of [...this.architecture.redraws, ...this.fontCallbacks]) { try { fn(); } catch (e) { console.warn(e); } }
+    this.screens?.invalidate();
   }
   lookAt(x, y, z) {
     this.camera.lookAt(x, y, z);
-    this.yaw = this.camera.rotation.y;
-    this.pitch = this.camera.rotation.x;
-    this.lookYaw = this.yaw;
-    this.lookPitch = this.pitch;
+    this.yaw = this.lookYaw = this.camera.rotation.y;
+    this.pitch = this.lookPitch = this.camera.rotation.x;
   }
   resize() {
     if (this.viewportWidth !== innerWidth || this.viewportHeight !== innerHeight) {
-      this.resetNavigationInput();
       this.viewportWidth = innerWidth;
       this.viewportHeight = innerHeight;
       this.camera.aspect = innerWidth / innerHeight;
       this.camera.updateProjectionMatrix();
       this.renderer?.setSize(innerWidth, innerHeight, false);
+      this.finish?.setSize(innerWidth, innerHeight, this.renderer.getPixelRatio());
+      // A held view is composed for the frame it is seen in; turn the screen and it is composed again.
+      if (this.interaction?.focused && this.director.holding) this.director.focus({ ...this.interaction.focused.view, duration: 0.5 });
     }
     this.touchControls?.refresh();
   }
-  applyQuality() {
-    this.scene.environment =
-      this.quality === "performance" ? null : this.environment || null;
-    this.renderer?.setPixelRatio(
-      this.quality === "full"
-        ? Math.min(devicePixelRatio, 1.5)
-        : this.quality === "performance"
-          ? 0.7
-          : Math.min(devicePixelRatio, 1),
-    );
-    if (this.renderer) {
-      this.renderer.shadowMap.enabled = this.quality !== "performance";
-      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      this.renderer.shadowMap.autoUpdate = this.quality === "full";
-      this.renderer.shadowMap.needsUpdate = true;
-      const size=this.quality === "full"?2048:1024;
-      if(this.sun.shadow.mapSize.x!==size){this.sun.shadow.map?.dispose();this.sun.shadow.map=null;this.sun.shadow.mapSize.set(size,size);}
+  /** Applies the current preset. `soft` is the governor nudging resolution only. */
+  applyQuality(soft = false) {
+    const r = this.renderer;
+    if (!r) return;
+    const preset = this.performance.preset;
+    r.setPixelRatio(this.performance.pixelRatio);
+    r.setSize(innerWidth, innerHeight, false);
+    if (!soft) {
+      this.scene.environment = preset.env ? this.environment : null;
+      r.shadowMap.enabled = preset.shadows;
+      r.shadowMap.type = preset.softShadows ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+      r.shadowMap.autoUpdate = preset.shadowAuto;
+      r.shadowMap.needsUpdate = true;
+      const sun = this.lighting?.sun;
+      if (sun && sun.shadow.mapSize.x !== preset.shadowSize) { sun.shadow.map?.dispose(); sun.shadow.map = null; sun.shadow.mapSize.set(preset.shadowSize, preset.shadowSize); }
+      if (sun) sun.castShadow = preset.shadows;
+      setAnisotropy(this.architecture.m, Math.min(preset.anisotropy, r.capabilities.getMaxAnisotropy()));
+      this.camera.far = preset.far;
+      this.camera.updateProjectionMatrix();
+      if (preset.post && !this.finish) this.finish = new Finish(r);
+      if (!preset.post && this.finish) { this.finish.dispose(); this.finish = null; }
+      // Materials are recompiled when shadows or the environment appear or disappear.
+      this.scene.traverse((o) => { if (o.material && !Array.isArray(o.material)) o.material.needsUpdate = true; });
+      if (this.lighting) this.lighting.moving = 2;
     }
-    this.architecture.reduced = this.reduced;
-    if(this.renderer)this.renderer.info.autoReset=true;
+    this.finish?.setSize(innerWidth, innerHeight, r.getPixelRatio());
     document.body.classList.toggle("houseNoMotion", this.reduced);
-    $("#graphicsQuality").value = this.quality;
-    $("#houseReduced").checked = this.reduced;
-    $("#houseArrivalSetting").checked =
-      localStorage.getItem("aura-intro") !== "off";
-    this.resize();
+    this.events.dispatchEvent(new Event("quality"));
+  }
+  setReduced(on) {
+    this.reduced = on;
+    localStorage.setItem("aura-house-reduced", on);
+    document.body.classList.toggle("houseNoMotion", on);
+  }
+  setOption(key, value) {
+    const names = { speed: "aura-walk-speed", sensitivity: "aura-look-sensitivity", smoothing: "aura-movement-smoothing", fieldOfView: "aura-fov" };
+    this[key] = Number(value);
+    localStorage.setItem(names[key], this[key]);
   }
   safe(fn) {
     return async (...args) => {
       try {
         return await fn(...args);
       } catch (e) {
-        this.studio.toast(e.message || "This action could not be completed.");
+        this.studio.toast(e.message || "That could not be done.");
         console.error(e);
       }
     };
   }
+  // ——— Input ———
   bind() {
-    const on = (id, fn) => ($("#" + id).onclick = this.safe(fn));
+    const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = this.safe(fn); };
     on("enterHouse", () => this.enter(false));
     on("skipArrival", () => this.enter(true));
-    on("houseBrand", () => this.goRoom("gallery"));
-    on("houseMapButton", () => this.openDialog("roomMap"));
-    on("houseSettingsButton", () => this.openDialog("houseSettings"));
-    on("houseModeButton", () => this.toggleMode());
     on("returnHouse", () => this.returnHouse());
-    on("roomWorkButton", () => this.openTool(this.currentRoom));
-    on("houseCommand", () => this.studio.openCommand());
-    on("mapMemory", () => {
-      $("#roomMap").close();
-      this.openMemory();
-    });
-    on("housePlay", () => this.play());
-    on("houseStop", () => this.studio.engine.stop());
-    on("houseLock", () => $("#world").requestPointerLock());
-    on("interactButton", () => this.interact());
-    for (const b of document.querySelectorAll("[data-house-close]"))
-      b.onclick = () => $("#" + b.dataset.houseClose).close();
-    for (const r of [...rooms].sort((a, b) => a.row - b.row || a.col - b.col)) {
-      const b = document.createElement("button");
-      b.dataset.room = r.id;
-      b.innerHTML =
-        "<span>" +
-        r.number +
-        "</span><strong>" +
-        r.name +
-        "</strong><small>" +
-        r.tool +
-        "</small>";
-      b.onclick = (e) => {
-        $("#roomMap").close();
-        this.goRoom(r.id, e.shiftKey);
-      };
-      $("#roomGrid").append(b);
-    }
-    $("#graphicsQuality").onchange = (e) => {
-      this.quality = e.target.value;
-      localStorage.setItem("aura-house-quality", this.quality);
-      this.applyQuality();
-    };
-    $("#houseReduced").onchange = (e) => {
-      this.reduced = e.target.checked;
-      localStorage.setItem("aura-house-reduced", this.reduced);
-      this.applyQuality();
-    };
-    $("#houseArrivalSetting").onchange = (e) =>
-      localStorage.setItem("aura-intro", e.target.checked ? "on" : "off");
-    $("#walkSpeed").value = this.speed;
-    $("#walkSpeed").oninput = (e) => {this.speed = Number(e.target.value); localStorage.setItem("aura-walk-speed", this.speed);};
-    for (const [id, key, setting] of [["lookSensitivity", "sensitivity", "aura-look-sensitivity"], ["movementSmoothing", "smoothing", "aura-movement-smoothing"], ["fieldOfView", "fieldOfView", "aura-fov"]]) {
-      $("#" + id).value = this[key];
-      $("#" + id).oninput = e => {this[key] = Number(e.target.value); localStorage.setItem(setting, this[key]); this.camera.fov = this.fieldOfView; this.camera.updateProjectionMatrix();};
-    }
-    $("#arrivalDuration").value = localStorage.getItem("aura-arrival-duration") || "short";
-    $("#arrivalDuration").onchange = e => localStorage.setItem("aura-arrival-duration", e.target.value);
-    on("ideaKeys", () => {
-      $("#ideaPanel").close();
-      this.goRoom("instrument");
-      this.production("instrument");
-    });
-    on("ideaRecord", () => {
-      $("#ideaPanel").close();
-      this.goRoom("record");
-      this.openTool("record");
-    });
+    for (const b of document.querySelectorAll("[data-house-close]")) b.onclick = () => $("#" + b.dataset.houseClose).close();
+    on("ideaKeys", () => { $("#ideaPanel").close(); this.goRoom("instrument"); });
+    on("ideaRecord", () => { $("#ideaPanel").close(); this.goRoom("record"); this.openTool("record"); });
     on("createFoundation", () => this.foundation());
     on("beginRecording", async () => {
       await this.recording.start();
-      $("#recordMessage").textContent =
-        "Recording the real input. Stop to decode and keep the take.";
-      await this.devices();
+      $("#recordMessage").textContent = "Recording the real input. Stop to decode and keep the take.";
+      await this.devicesList();
     });
     on("stopRecording", () => this.stopRecording());
     on("quickRecordStop", () => this.stopRecording());
-    $("#recordDevice").onchange = (e) =>
-      (this.recording.deviceId = e.target.value);
-    $("#recordGain").oninput = (e) =>
-      this.recording.setGain(Number(e.target.value));
-    $("#recordMonitor").onchange = (e) =>
-      this.recording.setMonitor(e.target.checked);
+    $("#recordDevice").onchange = (e) => (this.recording.deviceId = e.target.value);
+    $("#recordGain").oninput = (e) => this.recording.setGain(Number(e.target.value));
+    $("#recordMonitor").onchange = (e) => this.recording.setMonitor(e.target.checked);
     this.recording.addEventListener("change", () => this.recordUI());
     this.recording.addEventListener("meter", () => this.recordUI());
-    this.recording.addEventListener("error", (e) =>
-      this.studio.toast(e.detail?.message || "Recording failed."),
-    );
+    this.recording.addEventListener("error", (e) => this.studio.toast(e.detail?.message || "Recording failed."));
     on("listeningPlay", () => this.play());
-    on("listeningMixer", () => {
-      $("#masterPanel").close();
-      this.production("living");
-    });
-    $("#listeningGain").onchange = (e) =>
-      this.studio.commit(
-        "Master volume",
-        (p) => (p.master = Number(e.target.value)),
-      );
+    on("listeningMixer", () => { $("#masterPanel").close(); this.production("living"); });
+    $("#listeningGain").onchange = (e) => this.studio.commit("Master volume", (p) => (p.master = Number(e.target.value)));
     on("terraceExport", async () => {
       $("#terraceExport").disabled = true;
       $("#terraceStatus").textContent = "Rendering the real arrangement…";
       try {
         await this.studio.exportAudio();
-        $("#terraceStatus").textContent =
-          "Stereo WAV rendered and downloaded. 44.1 kHz / 16 bit.";
-        this.architecture.exportSculpture.material.emissive = new THREE.Color(
-          "#725537",
-        );
-        this.architecture.exportSculpture.material.emissiveIntensity = 0.2;
+        $("#terraceStatus").textContent = "Stereo WAV rendered and downloaded. 44.1 kHz / 16 bit.";
+        this.architecture.exported();
       } catch (e) {
         $("#terraceStatus").textContent = e.message;
         throw e;
@@ -322,421 +243,432 @@ export class MusicHouse {
         $("#terraceExport").disabled = false;
       }
     });
-    on("terraceProject", () =>
-      download(
-        portableProject(this.studio.getProject()),
-        (this.studio.getProject().name.replace(/[^a-z0-9 _-]/gi, "") ||
-          "AURA") + ".aura",
-      ),
-    );
+    on("terraceProject", () => download(portableProject(this.studio.getProject()), (this.studio.getProject().name.replace(/[^a-z0-9 _-]/gi, "") || "AURA") + ".aura"));
     on("keepMemory", async () => {
       await this.studio.persist();
-      await checkpoint(
-        this.studio.getProject(),
-        $("#memoryName").value.trim().slice(0, 80),
-      );
+      await checkpoint(this.studio.getProject(), $("#memoryName").value.trim().slice(0, 80));
       $("#memoryName").value = "";
       await this.loadMemories();
       this.studio.toast("A complete editable version has been kept.");
     });
+    for (const d of this.dialogs) d.addEventListener("close", () => { if (this.entered && this.mode === "house") this.canvas.focus({ preventScroll: true }); });
     document.addEventListener("keydown", (e) => this.keyDown(e));
     document.addEventListener("keyup", (e) => this.keys.delete(e.code));
-    document.addEventListener("pointerlockchange", () =>
-      document.body.classList.toggle(
-        "locked",
-        document.pointerLockElement === $("#world"),
-      ),
-    );
-    const canvas = $("#world");
-    const pointAt = e => this.pointer.set((e.clientX / innerWidth) * 2 - 1, (-e.clientY / innerHeight) * 2 + 1);
+    document.addEventListener("pointerlockchange", () => {
+      const locked = document.pointerLockElement === this.canvas;
+      document.body.classList.toggle("locked", locked);
+      // The browser reports one large jump as the cursor is captured; it is not the visitor's hand.
+      this.lookSettles = performance.now() + 220;
+      if (!locked) this.keys.clear();
+    });
+    this.events.addEventListener("light", (e) => this.sound.ambience({ rain: e.detail.sky === "rain" ? 1 : 0 }, 3));
+    document.body.classList.toggle("canLock", !this.touch && "requestPointerLock" in this.canvas);
+    const canvas = this.canvas;
+    const pointAt = (e) => {
+      this.pointer.set((e.clientX / innerWidth) * 2 - 1, (-e.clientY / innerHeight) * 2 + 1);
+      document.body.style.setProperty("--px", e.clientX + "px");
+      document.body.style.setProperty("--py", e.clientY + "px");
+    };
+    // A touch screen has no cursor at rest: between touches the house looks at the middle of the frame, where USE acts.
+    const rest = (e) => {
+      if (e.pointerType === "mouse" || this.interaction.focused) return;
+      this.pointer.set(0, 0);
+      document.body.style.setProperty("--px", "50%");
+      document.body.style.setProperty("--py", "50%");
+    };
     canvas.onpointerdown = (e) => {
-      if (!this.entered || this.mode !== "house" || this.drag || document.querySelector('dialog[open]')) return;
-      pointAt(e);
-      this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0 };
+      if (!this.entered || this.mode !== "house" || this.arrival || this.overlayOpen) return;
+      if (this.phone?.up && !this.phone.mobile) { this.phone.toggle(false); if (e.pointerType === "mouse") this.lock(); return; }
+      if (this.mentor?.asking) this.mentor.close();
+      const locked = this.interaction.locked();
+      if (!locked) pointAt(e);
+      if (this.director.active && !this.director.holding) return;
+      this.camera.updateMatrixWorld();
+      if (this.interaction.down(e)) { canvas.setPointerCapture?.(e.pointerId); return; }
+      if (this.interaction.focused) { this.interaction.focused.onClick?.(e); return; }
+      if (locked) { this.tap(); return; }
+      if (this.drag) return;
+      this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, mouse: e.pointerType === "mouse" };
       canvas.setPointerCapture(e.pointerId);
+      rest(e);
     };
     canvas.onpointermove = (e) => {
-      if (this.drag && this.drag.id !== e.pointerId) return;
-      pointAt(e);
-      if (document.pointerLockElement === canvas) {
-        this.rotate(e.movementX, e.movementY);
-      } else if (this.drag) {
-        const dx = e.clientX - this.drag.x,
-          dy = e.clientY - this.drag.y;
+      const locked = this.interaction.locked();
+      if (!locked && (e.pointerType === "mouse" || this.interaction.focused || this.interaction.active)) pointAt(e);
+      if (this.interaction.move(e) && this.interaction.active.use.drag) return;
+      if (locked) { if (!this.interaction.focused) this.rotate(e.movementX, e.movementY); return; }
+      if (this.drag && this.drag.id === e.pointerId) {
+        const dx = e.clientX - this.drag.x, dy = e.clientY - this.drag.y;
         this.drag.moved += Math.abs(dx) + Math.abs(dy);
         this.drag.x = e.clientX;
         this.drag.y = e.clientY;
-        this.rotate(dx, dy);
+        if (!this.interaction.focused) this.rotate(dx * 1.3, dy * 1.3);
       }
     };
     canvas.onpointerup = (e) => {
+      if (this.interaction.up(e)) { if (canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId); rest(e); return; }
       if (this.drag?.id !== e.pointerId) return;
-      pointAt(e);
-      if (this.drag.moved < 8 && this.touchControls.pointerId === null) {
-        this.camera.updateMatrixWorld();
-        this.findInteraction();
-        if (this.target) this.interact();
-        else this.walkToPointer();
-      }
+      const drag = this.drag;
       this.drag = null;
       if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+      if (drag.moved >= 8 || this.touchControls.pointerId !== null) return;
+      pointAt(e);
+      this.camera.updateMatrixWorld();
+      this.interaction.scan();
+      if (this.interaction.target) this.tap();
+      else if (drag.mouse && !this.player.seat) this.lock();
+      else if (!drag.mouse) this.walkToPointer();
+      rest(e);
     };
-    const cancelDrag = e => { if (this.drag?.id === e.pointerId) this.drag = null; };
-    canvas.onpointercancel = cancelDrag;
-    canvas.onlostpointercapture = cancelDrag;
+    const cancel = (e) => { if (this.drag?.id === e.pointerId) this.drag = null; this.interaction.cancel(); };
+    canvas.onpointercancel = cancel;
+    canvas.onlostpointercapture = (e) => { if (this.drag?.id === e.pointerId) this.drag = null; };
+    canvas.addEventListener("wheel", (e) => { const device = this.interaction.focused; if (device?.onWheel) { e.preventDefault(); device.onWheel(e); } }, { passive: false });
+    canvas.addEventListener("dblclick", (e) => this.interaction.focused?.onDoubleClick?.(e));
+    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   }
-  enter(skip) {
-    if (this.entered) return;
-    this.entered = true;
-    $("#arrival").hidden = true;
-    if ($("#arrivalSound").checked) {
-      const t = this.studio
-        .getProject()
-        .tracks.find((t) => t.instrument === "keys");
-      if (t)
-        this.studio.engine
-          .audition({ ...t, gain: 0.2 }, 62)
-          .catch((e) => this.studio.toast(e.message));
-    }
-    if (skip || this.reduced) this.goRoom("gallery", true);
-    else this.arrival = new Arrival(this, localStorage.getItem("aura-arrival-duration") !== "full");
-    $("#world").focus();
-    this.touchControls.refresh();
-  }
-  async play() {
-    const e = this.studio.engine;
-    if (e.playing) e.pause();
-    else await e.play(this.studio.getProject());
-  }
-  openDialog(id) {
-    document.exitPointerLock?.();
-    this.resetNavigationInput();
-    const d = $("#" + id);
-    for(const open of document.querySelectorAll('dialog[open]'))if(open!==d)open.close();
-    if (!d.open) d.showModal();
+  lock() {
+    if (this.touch || this.interaction.focused || !this.canvas.requestPointerLock) return;
+    try {
+      const request = this.canvas.requestPointerLock({ unadjustedMovement: true });
+      request?.catch?.(() => this.canvas.requestPointerLock()?.catch?.(() => {}));
+    } catch {}
   }
   keyDown(e) {
-    if (
-      e.target.closest("input,textarea,select") ||
-      [...document.querySelectorAll("dialog")].some((d) => d.open)
-    )
-      return;
-    if (this.entered && ((e.code === "Enter" && (e.ctrlKey || e.metaKey)) || (e.code === "Tab" && e.target === $("#world")))) {
-      e.preventDefault();
-      this.toggleMode();
-      return;
-    }
-    if (
-      this.mode !== "house" ||
-      !this.entered ||
-      e.ctrlKey ||
-      e.metaKey ||
-      e.altKey
-    )
-      return;
-    if (/^Digit[1-9]$/.test(e.code)) {
-      e.preventDefault();
-      this.goRoom(rooms[Number(e.code.at(-1)) - 1].id, e.shiftKey);
+    const typing = e.target.closest?.("input,textarea,select");
+    if (e.code === "Escape" && this.entered && !this.overlayOpen) {
+      if (this.mentor?.asking) { e.preventDefault(); return this.mentor.close(); }
+      if (typing) return;
+      if (this.phone?.up) return this.phone.toggle(false);
+      if (this.interaction.focused) return this.blur();
+      if (this.mentor?.visible) return this.mentor.close();
+      if (this.player.seat) return this.stand();
+      if (this.listening) return this.setListening(false);
       return;
     }
-    if (e.code === "KeyM") {
-      e.preventDefault();
-      this.openDialog("roomMap");
-    }
-    if (e.code === "KeyE") {
-      e.preventDefault();
-      this.interact();
-    }
-    if (
-      [
-        "KeyW",
-        "KeyA",
-        "KeyS",
-        "KeyD",
-        "ArrowUp",
-        "ArrowDown",
-        "ArrowLeft",
-        "ArrowRight",
-      ].includes(e.code)
-    ) {
+    if (typing || this.overlayOpen) return;
+    if (this.entered && e.code === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); return this.toggleMode(); }
+    if (this.mode !== "house" || !this.entered || this.arrival || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === "Tab") { e.preventDefault(); return this.phone?.toggle(); }
+    const focused = this.interaction.focused;
+    if (focused?.onKey?.(e)) { e.preventDefault(); return; }
+    if (e.code === "KeyT" || e.code === "Enter") { e.preventDefault(); return this.mentor?.ask(); }
+    if (e.code === "KeyL") { e.preventDefault(); return this.setListening(!this.listening); }
+    if (e.code === "KeyE") { e.preventDefault(); return focused ? this.blur() : this.interact(); }
+    if (focused || this.phone?.up) return;
+    if (/^Digit[1-9]$/.test(e.code)) { e.preventDefault(); return this.goRoom(rooms[Number(e.code.at(-1)) - 1].id, e.shiftKey); }
+    if (e.code === "KeyM") { e.preventDefault(); return this.phone?.open("map"); }
+    if (e.code === "ShiftLeft" || e.code === "ShiftRight") this.keys.add(e.code);
+    if (moveKeys.has(e.code)) {
       e.preventDefault();
       this.beginManualMove();
       this.keys.add(e.code);
     }
   }
   beginManualMove() {
-    if (this.journey?.speed && this.camera.position.z > 31) this.goRoom("gallery", true);
-    this.arrival?.finish();
     this.journey = null;
     this.walkTarget = null;
-    document.body.classList.remove("houseMoving");
   }
   resetNavigationInput() {
     this.keys.clear();
     this.touchControls?.reset();
-    const canvas = $("#world"), pointerId = this.drag?.id;
+    const pointerId = this.drag?.id;
     this.drag = null;
-    if (pointerId !== undefined && canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
+    if (pointerId !== undefined && this.canvas.hasPointerCapture(pointerId)) this.canvas.releasePointerCapture(pointerId);
+    this.interaction?.cancel();
     this.journey = null;
     this.walkTarget = null;
     this.velocity.set(0, 0);
-    document.body.classList.remove("houseMoving");
   }
   rotate(dx, dy) {
-    this.lookYaw -= dx * this.sensitivity;
-    this.lookPitch = Math.max(-1.1, Math.min(1.1, this.lookPitch - dy * this.sensitivity));
-  }
-  smoothLook(dt) {
-    const factor = this.reduced ? 1 : 1 - Math.exp(-dt * 16);
-    this.yaw += Math.atan2(Math.sin(this.lookYaw-this.yaw), Math.cos(this.lookYaw-this.yaw)) * factor;
-    this.pitch += (this.lookPitch-this.pitch) * factor;
-    this.camera.rotation.set(this.pitch, this.yaw, 0, "YXZ");
-  }
-  finishJourney(j) {
-    this.yaw = this.lookYaw = this.camera.rotation.y;
-    this.pitch = this.lookPitch = this.camera.rotation.x;
-    this.setRoom(j.id);
-    this.journey = null;
-    this.velocity.set(0,0);
-    document.body.classList.remove("houseMoving");
-  }
-  goRoom(id, instant = false) {
-    const r = roomById(id);
-    if (!r) return;
-    if (!this.renderer) {
-      this.setRoom(id);
-      return this.openTool(id);
+    if (performance.now() < (this.lookSettles || 0)) return;
+    dx = Math.max(-160, Math.min(160, dx));
+    dy = Math.max(-160, Math.min(160, dy));
+    const scale = this.sensitivity * (this.listening ? 0.6 : 1) * (this.player.seat ? 0.85 : 1);
+    this.lookYaw -= dx * scale;
+    this.lookPitch = Math.max(-1.25, Math.min(1.25, this.lookPitch - dy * scale));
+    if (this.player.seat?.yaw !== undefined) {
+      // Seated, the head turns freely but not all the way round.
+      const centre = this.player.seat.yaw, offset = Math.atan2(Math.sin(this.lookYaw - centre), Math.cos(this.lookYaw - centre));
+      this.lookYaw = centre + Math.max(-2.3, Math.min(2.3, offset));
     }
-    if (this.camera.position.z > 31) {
-      this.camera.position.set(0, 1.72, 24);
-      this.lookAt(0, 2, 10);
-    }
-    this.returnHouse();
-    this.arrival?.finish();
+  }
+  // ——— Arrival ———
+  enter(skip) {
+    if (this.entered) return;
+    this.entered = true;
+    const sound = $("#arrivalSound").checked;
+    this.sound.setEnabled(sound);
+    const gate = $("#gate");
+    gate.classList.add("leaving");
+    setTimeout(() => (gate.hidden = true), 1200);
+    // The gesture that begins the experience is also what lets the browser make sound.
+    if (sound) this.studio.engine.init().then(() => { this.sound.ensureBeds(); this.sound.applyBeds(2); }).catch(() => {});
+    const cinematic = !skip && !this.reduced && this.renderer && localStorage.getItem("aura-intro") !== "off";
+    if (cinematic) this.arrival = new Arrival(this, { short: localStorage.getItem("aura-arrival-duration") === "short" });
+    else { if (!this.touch && !skip) this.lock(); this.arrive(); }
+    this.canvas.focus({ preventScroll: true });
+    this.touchControls.refresh();
+  }
+  /** The moment control passes to the visitor. */
+  arrive() {
+    const view = views.gallery;
+    this.player.place(view[0], view[1]);
+    this.lookAt(view[2], view[3], view[4]);
+    this.roomSet = false;
+    this.setRoom("gallery");
+    document.body.classList.add("entered");
+    document.body.classList.remove("booting");
+    this.performance.hold(6000);
+    this.sound.ambience({ drone: 0, room: 0.7 });
+    this.touchControls.refresh();
+    this.hud.now();
+    this.events.dispatchEvent(new Event("arrive"));
+    if (!this.guide?.begin()) this.hud.hint(this.touch ? [["DRAG", "LOOK"], ["PAD", "WALK"], ["●", "PHONE"]] : [["WASD", "WALK"], ["E", "USE"], ["TAB", "PHONE"], ["T", "ASK AURA"]], 9000);
+  }
+  // ——— Transport ———
+  async play() {
+    if (this.playback) return this.playback.toggle();
+    const e = this.studio.engine;
+    if (e.playing) e.pause();
+    else await e.play(this.studio.getProject());
+  }
+  // ——— Sheets and tools ———
+  openDialog(id) {
+    document.exitPointerLock?.();
     this.resetNavigationInput();
-    const view = views[id];
-    if (this.reduced || instant) {
-      this.camera.position.set(view[0], 1.72, view[1]);
-      this.lookAt(view[2], view[3], view[4]);
-      this.journey = null;
-      this.setRoom(id);
-      document.body.classList.remove("houseMoving");
-      return;
-    }
-    const route=walkRoute(this.architecture,this.camera.position,{x:view[0],z:view[1]});
-    if(!route){this.studio.toast("No walkable route. Use production view or choose another room.");return;}
-    const points=route.map(p=>new THREE.Vector3(p.x,1.72,p.z));
-    const finalCamera=this.camera.clone();finalCamera.position.set(view[0],1.72,view[1]);finalCamera.lookAt(view[2],view[3],view[4]);
-    this.journey = { points, index: 1, id, facing:finalCamera.quaternion.clone() };
-    document.body.classList.add("houseMoving");
+    const d = $("#" + id);
+    for (const open of document.querySelectorAll("dialog[open]")) if (open !== d) open.close();
+    if (!d.open) { d.showModal(); this.sound.open(); }
   }
-  setRoom(id) {
-    if (this.currentRoom === id && this.roomSet) return;
-    this.currentRoom = id;
-    this.roomSet = true;
-    this.updateLighting();
-    const r = roomById(id);
-    document.body.dataset.room = id;
-    $("#roomTitle").textContent = r.name + ".";
-    $("#roomEyebrow").textContent = r.eyebrow;
-    $("#roomDescription").textContent = r.description;
-    $("#roomWorkButton").innerHTML = r.tool;
-    for (const b of document.querySelectorAll("#roomGrid [data-room]"))
-      b.classList.toggle("active", b.dataset.room === id);
+  toolLabel(room) {
+    return (roomById(room)?.tool || "TOOLS").toUpperCase();
   }
-  updateLighting() {
-    const lights=this.architecture.roomLights;
-    const nearest=[...lights].sort((a,b)=>a.getWorldPosition(new THREE.Vector3()).distanceToSquared(this.camera.position)-b.getWorldPosition(new THREE.Vector3()).distanceToSquared(this.camera.position)).slice(0,3);
-    for(const light of lights)light.visible=nearest.includes(light);
+  async openTool(room) {
+    if (room === "gallery") return this.studio.openHub();
+    if (room === "idea") return this.openDialog("ideaPanel");
+    if (room === "record") { this.openDialog("recordPanel"); return this.devicesList(); }
+    if (room === "master") { $("#listeningGain").value = this.studio.getProject().master; return this.openDialog("masterPanel"); }
+    if (room === "terrace") return this.openDialog("exportPanel");
+    this.production(room);
   }
   toggleMode() {
-    this.mode === "house"
-      ? this.production(
-          ["instrument", "rhythm", "arrange", "living"].includes(
-            this.currentRoom,
-          )
-            ? this.currentRoom
-            : "arrange",
-        )
-      : this.returnHouse();
+    this.mode === "house" ? this.production(["instrument", "rhythm", "arrange", "living"].includes(this.currentRoom) ? this.currentRoom : "arrange") : this.returnHouse();
   }
+  /** The precise editor: every parameter, in the same project. */
   production(room) {
     document.exitPointerLock?.();
+    if (this.interaction.focused) this.blur(true);
+    this.phone?.toggle(false);
     this.resetNavigationInput();
     this.mode = "production";
     document.body.classList.remove("houseMode");
     document.body.classList.add("productionMode");
     document.body.dataset.room = room;
-    $("#productionRoomName").textContent = roomById(room).name.toUpperCase();
-    $("#houseModeButton").innerHTML = "House view <kbd>Ctrl ↵</kbd>";
+    $("#productionRoomName").textContent = "THE PRECISE EDITOR · " + roomById(room).name.toUpperCase();
     this.studio.activate(room);
+    this.sound.open();
     this.touchControls.refresh();
   }
   returnHouse() {
-    if (!this.renderer) return this.openDialog("roomMap");
+    if (!this.renderer) return this.studio.openCommand();
+    if (this.mode === "house") return;
     this.mode = "house";
     document.body.classList.remove("productionMode");
     document.body.classList.add("houseMode");
     document.body.dataset.room = this.currentRoom;
-    $("#houseModeButton").innerHTML = "Production view <kbd>Ctrl ↵</kbd>";
     window.dispatchEvent(new Event("resize"));
+    for (const device of this.devices) device.refresh();
+    this.sound.close();
     this.touchControls.refresh();
+    this.canvas.focus({ preventScroll: true });
   }
-  async openTool(room) {
-    if (room === "gallery") return this.studio.openHub();
-    if (room === "idea") return this.openDialog("ideaPanel");
-    if (room === "record") {
-      this.openDialog("recordPanel");
-      return this.devices();
-    }
-    if (room === "master") {
-      $("#listeningGain").value = this.studio.getProject().master;
-      return this.openDialog("masterPanel");
-    }
-    if (room === "terrace") return this.openDialog("exportPanel");
-    this.production(room);
+  // ——— Moving through the house ———
+  finishJourney(j) {
+    this.yaw = this.lookYaw = this.camera.rotation.y;
+    this.pitch = this.lookPitch = this.camera.rotation.x;
+    this.setRoom(j.id);
+    this.journey = null;
+    this.velocity.set(0, 0);
+    j.done?.();
   }
-  findInteraction() {
-    if (this.mode !== "house" || !this.entered) return;
-    this.raycaster.setFromCamera(
-      document.pointerLockElement ? new THREE.Vector2(0, 0) : this.pointer,
-      this.camera,
-    );
-    const hits = this.raycaster.intersectObjects(
-      this.architecture.interactive,
-      false,
-    );
-    const hit = hits.find((h) => h.distance < 14 && h.object.visible);
-    let blocked = false;
-    if (hit) {
-      const point = new THREE.Vector3();
-      for (const w of this.architecture.walls) {
-        const box = new THREE.Box3(
-          new THREE.Vector3(w.minX, 0, w.minZ),
-          new THREE.Vector3(w.maxX, 6.4, w.maxZ),
-        );
-        if (
-          this.raycaster.ray.intersectBox(box, point) &&
-          point.distanceTo(this.camera.position) < hit.distance - 0.2
-        ) {
-          blocked = true;
-          break;
-        }
-      }
-    }
-    this.target = hit && !blocked ? hit.object : null;
-    $("#interactionHint").hidden = !this.target;
-    const action = this.target?.userData.action;
-    let label = action ? labels[action.type] || "Open instrument" : "";
-    if (action?.type === "track") {
-      const t = this.studio.getProject().tracks.find((t) => t.id === action.id),
-        m = this.metrics.tracks.get(action.id);
-      if (t)
-        label =
-          t.name +
-          " · " +
-          (t.pan === 0
-            ? "center"
-            : Math.round(Math.abs(t.pan) * 100) + (t.pan < 0 ? "L" : "R")) +
-          " · " +
-          db(m?.rms || 0) +
-          " dBFS RMS";
-    } else if (action?.type === "channel") {
-      const track=this.studio.getProject().tracks[action.index];
-      label=track?"Open "+track.name+" in the mixer":"Open the mixing console";
-    } else if (action?.type === "note")
-      label = "Play " + noteName(action.pitch) + " · synthesized keys";
-    else if (action?.type === "step")
-      label =
-        { 36: "Kick", 38: "Snare", 42: "Hi-hat" }[action.pitch] +
-        " · step " +
-        (action.step + 1);
-    else if (action?.type === "instrument")
-      label =
-        "Open " +
-        (presets.find((p) => p.id === action.instrument)?.name || "instrument");
-    $("#interactionName").textContent = label;
+  goRoom(id, instant = false) {
+    const r = roomById(id);
+    if (!r) return;
+    if (!this.renderer) { this.setRoom(id); return this.openTool(id); }
+    if (!this.entered) return;
+    this.returnHouse();
+    this.arrival?.finish();
+    if (this.interaction.focused) this.blur(true);
+    if (this.player.seat) this.stand();
+    this.resetNavigationInput();
+    const view = views[id];
+    return this.walkTo(view[0], view[1], { look: [view[2], view[3], view[4]], instant, id });
   }
-  async interact() {
-    if (!this.target) return this.openTool(this.currentRoom);
-    const a = this.target.userData.action;
-    try {
-      if (a.type === "projects") await this.studio.openHub();
-      else if (a.type === "new") {
-        await this.studio.persist();
-        await this.studio.selectProject(newProject(true));
-        this.goRoom("instrument");
-      } else if (a.type === "tool") await this.openTool(a.room);
-      else if (a.type === "note") {
-        this.studio.setInstrument("keys");
-        await this.studio.engine.audition(this.studio.getTrack(), a.pitch);
-      } else if (a.type === "instrument") {
-        this.studio.setInstrument(a.instrument);
-        this.production("instrument");
-        this.studio.setInstrument(a.instrument);
-      } else if (a.type === "step") this.studio.toggleStep(a.step, a.pitch);
-      else if (a.type === "track") {
-        this.production("living");
-        this.studio.select(a.id);
-      } else if (a.type === "channel") {
-        const track=this.studio.getProject().tracks[a.index];
-        this.production("living");if(track)this.studio.select(track.id);
-      } else if (a.type === "lens") this.production("living");
-      else if (a.type === "memory") await this.openMemory();
-      else if (a.type === 'game') window.aura.game?.open();
-      else if (a.type === 'coach') window.aura.coach?.open();
-    } catch (e) {
-      this.studio.toast(e.message);
+  /** Walks (or jumps) to a point, optionally ending with the eyes on something. */
+  walkTo(x, z, { look = null, instant = false, id = null, done = null, speed = null } = {}) {
+    const room = id || roomAt(x, z).id;
+    if (this.reduced || instant) {
+      this.player.place(x, z);
+      if (look) this.lookAt(...look);
+      this.journey = null;
+      this.setRoom(room);
+      done?.();
+      return true;
     }
+    const route = walkRoute(this.architecture, this.camera.position, { x, z });
+    if (!route) {
+      this.player.place(x, z);
+      if (look) this.lookAt(...look);
+      this.setRoom(room);
+      done?.();
+      return true;
+    }
+    let facing = null;
+    if (look) {
+      const probe = this.camera.clone();
+      probe.position.set(x, this.architecture.groundHeight(x, z) + EYE, z);
+      probe.lookAt(...look);
+      facing = probe.quaternion.clone();
+    }
+    this.journey = { points: route.map((p) => new THREE.Vector3(p.x, 0, p.z)), index: 1, id: room, facing, done, speed };
+    return true;
   }
   walkToPointer() {
-    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const ray = this.interaction.raycaster;
+    ray.setFromCamera(this.pointer, this.camera);
     const p = new THREE.Vector3();
-    if (
-      this.raycaster.ray.intersectPlane(
-        new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
-        p,
-      ) &&
-      p.distanceTo(this.camera.position) < 18 &&
-      this.architecture.canWalk(p.x, p.z)
-    ) {
-      const route=walkRoute(this.architecture,this.camera.position,p);
-      if(route)this.journey={points:route.map(p=>new THREE.Vector3(p.x,1.72,p.z)),index:1,id:roomAt(p.x,p.z).id,speed:this.speed};
-      this.walkTarget=null;
+    if (ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), p) && p.distanceTo(this.camera.position) < 18 && this.architecture.canWalk(p.x, p.z)) {
+      const route = walkRoute(this.architecture, this.camera.position, p);
+      if (route) this.journey = { points: route.map((q) => new THREE.Vector3(q.x, 0, q.z)), index: 1, id: roomAt(p.x, p.z).id, speed: this.speed };
     }
+  }
+  setRoom(id) {
+    if (this.currentRoom === id && this.roomSet) return;
+    const first = !this.roomSet;
+    this.currentRoom = id;
+    this.roomSet = true;
+    document.body.dataset.room = id;
+    this.architecture.showRooms(id);
+    this.performance.hold(2500);
+    if (this.renderer) this.renderer.shadowMap.needsUpdate = true;
+    const room = roomById(id);
+    if (!first && this.entered && !this.arrival) this.hud.room(room);
+    else this.hud.seen.add(id);
+    this.events.dispatchEvent(new CustomEvent("room", { detail: id }));
+  }
+  // ——— Interaction ———
+  findInteraction() {
+    this.interaction.scan();
+  }
+  interact() {
+    return this.interaction.interact();
+  }
+  /** A click on the world uses what is aimed at — except the casework of an instrument you are sitting at; E still opens that. */
+  tap() {
+    this.interaction.scan();
+    if (this.player.seat?.own?.includes(this.interaction.target)) return false;
+    return this.interact();
+  }
+  /** Moves in to an instrument: the camera settles, the room recedes, the cursor is free. */
+  focus(device) {
+    if (this.interaction.focused === device || !this.entered) return;
+    if (this.interaction.focused) this.interaction.focused.onExit();
+    document.exitPointerLock?.();
+    this.resetNavigationInput();
+    this.interaction.focused = device;
+    this.interaction.set(null, null, null);
+    document.body.classList.add("focused");
+    this.lighting.dimTarget = device.dim ?? 0.55;
+    this.sound.open();
+    this.director.focus({ ...device.view, onArrive: () => device.onArrive?.() });
+    device.onEnter();
+    this.hud.hint(device.hints || [["ESC", "BACK"]], 0);
+    if (this.touch && innerHeight > innerWidth && !this.turnTold) { this.turnTold = true; this.studio.toast("Turn the phone sideways for a closer view."); }
+    this.events.dispatchEvent(new CustomEvent("focus", { detail: device.name }));
+  }
+  blur(instant = false) {
+    const device = this.interaction.focused;
+    if (!device) return;
+    this.interaction.cancel();
+    this.interaction.focused = null;
+    this.interaction.set(null, null, null);
+    document.body.classList.remove("focused");
+    this.canvas.style.cursor = "";
+    this.lighting.dimTarget = 0;
+    this.hud.clearHint();
+    device.onExit();
+    this.sound.close();
+    if (instant) this.director.cancel();
+    else this.director.release(0.8);
+    this.events.dispatchEvent(new CustomEvent("blur", { detail: device.name }));
+  }
+  sit(seat) {
+    if (this.player.seat === seat) return;
+    if (this.interaction.focused) this.blur(true);
+    this.player.sitDown(seat);
+    document.body.classList.add("seated");
+    this.hud.hint(this.touch ? [["PAD", "STAND"]] : [["DRAG", "LOOK"], ["WASD", "STAND"], ["TAB", "PHONE"], ["T", "ASK AURA"], ["L", "JUST LISTEN"]], 7000);
+    this.events.dispatchEvent(new CustomEvent("sit", { detail: seat.id }));
+  }
+  stand() {
+    this.player.stand();
+    document.body.classList.remove("seated");
+  }
+  /** Stop producing; just be in the house with the music. */
+  setListening(on) {
+    if (this.listening === on || !this.entered) return;
+    this.listening = on;
+    document.body.classList.toggle("listening", on);
+    this.lighting.borrow(on ? "listen" : null);
+    this.player.pace = on ? 0.62 : 1;
+    this.player.lookEase = on ? 7 : 18;
+    if (on) {
+      if (this.interaction.focused) this.blur();
+      this.phone?.toggle(false);
+      this.hud.moment({ eyebrow: "LISTENING", title: "Just\nlisten.", sub: this.touch ? "Walk, sit, look outside. The phone brings you back." : "Walk, sit, look outside. Press L to return.", small: true, hold: 2600 });
+      if (!this.studio.engine.playing) this.play().catch(() => {});
+    } else this.hud.hint([["L", "LISTENING OFF"]], 2500);
+    this.events.dispatchEvent(new CustomEvent("listening", { detail: on }));
+  }
+  /** The track that answers when a key is struck on the grand. */
+  keysTrack() {
+    const selected = this.studio.getTrack();
+    if (selected && !["drums", "audio"].includes(selected.instrument)) return selected;
+    return this.studio.getProject().tracks.find((t) => t.instrument === "keys") || (this.spareKeys ||= { ...makeTrack("keys"), id: "house-keys" });
+  }
+  drumTrack() {
+    return this.studio.getProject().tracks.find((t) => t.instrument === "drums") || (this.spareDrums ||= { ...makeTrack("drums"), id: "house-drums" });
+  }
+  hitDrum(pitch, mesh = null) {
+    this.studio.engine.audition(this.drumTrack(), pitch).catch((e) => this.studio.toast(e.message));
+    const sway = mesh && this.architecture.swaying.find((s) => s.object === mesh);
+    if (sway) sway.kick = 1;
+    this.events.dispatchEvent(new CustomEvent("control", { detail: { device: "kit", control: "hit", value: pitch } }));
+  }
+  playConsole() {
+    if (this.console) return this.console.enter();
+    window.aura.game?.open();
   }
   async foundation() {
     await this.studio.persist();
-    const text = $("#ideaText").value.trim(),
-      p = foundationFromText(text);
+    const text = $("#ideaText").value.trim(), p = foundationFromText(text);
     await this.studio.selectProject(p);
     $("#ideaPanel").close();
-    this.goRoom("instrument");
-    this.studio.toast(
-      "Editable local recipe: " +
-        p.bpm +
-        " BPM, " +
-        p.scale +
-        ", " +
-        p.tracks.length +
-        " tracks. No model was used.",
-    );
+    this.goRoom("living");
+    this.studio.toast(`An editable beginning: ${p.bpm} BPM, ${p.scale}, ${p.tracks.length} tracks.`);
   }
-  async devices() {
-    const ds = await this.recording.devices(),
-      select = $("#recordDevice"),
-      value = select.value;
+  async devicesList() {
+    const ds = await this.recording.devices(), select = $("#recordDevice"), value = select.value;
     select.replaceChildren(new Option("Default microphone", ""));
-    for (const [d, i] of ds.map((d, i) => [d, i]))
-      select.add(new Option(d.label || "Input " + (i + 1), d.deviceId));
+    ds.forEach((d, i) => select.add(new Option(d.label || "Input " + (i + 1), d.deviceId)));
     select.value = value;
     select.disabled = this.recording.active;
   }
   async stopRecording() {
     $("#recordMessage").textContent = "Decoding and saving the take…";
     await this.recording.stop();
-    $("#recordMessage").textContent =
-      "Take kept as an audio track. Open the arrangement to edit it.";
+    $("#recordMessage").textContent = "Take kept as an audio track. It is on the timeline now.";
     this.recordUI();
   }
   recordUI() {
@@ -747,46 +679,30 @@ export class MusicHouse {
     $("#beginRecording").disabled = r.active || r.saving;
     $("#stopRecording").disabled = !r.active;
     $("#recordDevice").disabled = r.active;
-    if ($("#recordPanel").open) {
-      const c = $("#recordWave"),
-        ctx = c.getContext("2d");
-      ctx.fillStyle = "#1d2521";
-      ctx.fillRect(0, 0, c.width, c.height);
-      ctx.strokeStyle = "#c4b497";
-      ctx.beginPath();
-      r.wave.forEach((v, i) => {
-        const x = (i / r.wave.length) * c.width,
-          y = 65 + v * 58;
-        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-      });
-      ctx.stroke();
-    }
+    if (!$("#recordPanel").open) return;
+    const c = $("#recordWave"), ctx = c.getContext("2d");
+    ctx.fillStyle = "#161412";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.strokeStyle = "#efe7d8";
+    ctx.beginPath();
+    r.wave.forEach((v, i) => { const x = (i / r.wave.length) * c.width, y = 65 + v * 58; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
   }
   async openMemory() {
     this.openDialog("memoryPanel");
     await this.loadMemories();
   }
   async loadMemories() {
-    const projectId = this.studio.getProject().id;
-    const memories = await listMemories(projectId);
+    const projectId = this.studio.getProject().id, memories = await listMemories(projectId);
     if (projectId !== this.studio.getProject().id) return;
     this.memories = memories;
     const list = $("#memoryList");
     list.replaceChildren();
-    if (!memories.length) {
-      const p = document.createElement("p");
-      p.textContent = "Your kept versions will appear here and in the gallery.";
-      list.append(p);
-    }
+    if (!memories.length) list.append(Object.assign(document.createElement("p"), { textContent: "Kept versions will appear here, and on the ledge by the front door." }));
     for (const m of memories) {
       const b = document.createElement("button");
       b.className = "memoryVersion";
-      const strong = document.createElement("strong"),
-        small = document.createElement("small");
-      strong.textContent = m.name;
-      small.textContent =
-        new Date(m.savedAt).toLocaleString() + " · Restore ↗";
-      b.append(strong, small);
+      b.append(Object.assign(document.createElement("strong"), { textContent: m.name }), Object.assign(document.createElement("small"), { textContent: new Date(m.savedAt).toLocaleString() + " · RESTORE" }));
       b.onclick = this.safe(async () => {
         await this.studio.persist();
         await this.studio.selectProject(structuredClone(m.project));
@@ -795,153 +711,99 @@ export class MusicHouse {
       });
       list.append(b);
     }
-    this.architecture.updateProject(this.studio.getProject(), this.memories);
+    this.events.dispatchEvent(new Event("memories"));
   }
   updateProject() {
     const p = this.studio.getProject();
-    $("#houseProject").textContent = p.name;
-    $("#houseBpm").textContent = p.bpm + " BPM";
-    this.architecture.updateProject(p, this.memories);
-    if(this.renderer)this.renderer.shadowMap.needsUpdate=true;
+    this.events.dispatchEvent(new Event("project"));
+    if (this.renderer) this.renderer.shadowMap.needsUpdate = true;
+    for (const device of this.devices) device.refresh();
     if (this.memoryProject !== p.id) {
       this.memoryProject = p.id;
-      this.loadMemories().catch((e) =>
-        this.studio.toast("Versions could not be loaded: " + e.message),
-      );
+      this.loadMemories().catch((e) => this.studio.toast("Versions could not be loaded: " + e.message));
     }
   }
-  move(dt) {
-    const pos = this.camera.position;
-    if (this.arrival) return;
-    if (this.journey) {
-      const j = this.journey;
-      if(j.arrived){
-        if(j.facing)this.camera.quaternion.slerp(j.facing,1-Math.exp(-dt*6));
-        if(!j.facing || this.camera.quaternion.angleTo(j.facing)<.005)this.finishJourney(j);
-        return;
+  // ——— Frame ———
+  /** Small motions that make the place feel inhabited. All of it is cheap and none of it is random noise. */
+  animate(dt, t, bands) {
+    const a = this.architecture, e = this.studio.engine, still = this.reduced, time = t / 1000;
+    if (a.time) a.time.value = time;
+    const react = still ? 0 : 1;
+    for (const cone of a.cones) cone.mesh.position.z = cone.rest + cone.depth * bands[cone.band] * react * (cone.band === "bass" ? 1 : 0.6 + 0.4 * Math.sin(time * 90));
+    if (e.playing && !still) for (const s of a.spinners) s.object.rotation[s.axis] += s.speed * dt;
+    const wind = Math.min(1, this.velocity.length() / 4);
+    for (const s of a.swaying) {
+      if (s.cymbal) {
+        if (!s.kick || s.kick < 0.01) continue;
+        s.kick *= Math.exp(-dt * 2.6);
+        s.object.rotation.x = s.base.x + Math.sin(time * 19 + s.phase) * 0.16 * s.kick;
+        s.object.rotation.z = s.base.z + Math.cos(time * 16 + s.phase) * 0.12 * s.kick;
+        continue;
       }
-      const
-        target = j.points[j.index],
-        delta = target.clone().sub(pos),
-        distance = delta.length(),
-        speed = (j.speed || Math.min(5.5,this.speed*1.65)) * Math.min(1, .2 + distance / 3);
-      if (distance < dt * speed + 0.08) {
-        pos.copy(target);
-        j.index++;
-        if (j.index >= j.points.length) {
-          j.arrived=true;
-          if(!j.facing)this.finishJourney(j);
-        }
-      } else {
-        pos.addScaledVector(delta, (dt * speed) / distance);
-        const old = this.camera.quaternion.clone();
-        this.camera.lookAt(target.x, 1.72, target.z);
-        if(j.facing && j.index===j.points.length-1)this.camera.quaternion.slerp(j.facing,Math.max(0,1-distance/4));
-        this.camera.quaternion.slerp(old, Math.exp(-dt * 5));
-        this.yaw = this.camera.rotation.y;
-        this.pitch = this.camera.rotation.x;
-        this.lookYaw=this.yaw;this.lookPitch=this.pitch;
-      }
-      this.setRoom(roomAt(pos.x,pos.z).id);
-      return;
+      if (still) continue;
+      // Plants lean a little when someone walks past.
+      const near = s.object.getWorldPosition(this.scratch).distanceToSquared(this.camera.position) < 9 ? wind : 0;
+      s.gust = (s.gust || 0) + (near - (s.gust || 0)) * (1 - Math.exp(-dt * 2));
+      s.object.rotation.z = Math.sin(time * 0.7 + s.phase) * s.amount * (1 + s.gust * 5 + bands.bass * 0.6);
+      s.object.rotation.x = Math.cos(time * 0.53 + s.phase) * s.amount * (0.7 + s.gust * 3);
     }
-    let f =
-        (this.keys.has("KeyW") || this.keys.has("ArrowUp") ? 1 : 0) -
-        (this.keys.has("KeyS") || this.keys.has("ArrowDown") ? 1 : 0),
-      s =
-        (this.keys.has("KeyD") || this.keys.has("ArrowRight") ? 1 : 0) -
-        (this.keys.has("KeyA") || this.keys.has("ArrowLeft") ? 1 : 0);
-    f += this.touchControls.forward;
-    s += this.touchControls.strafe;
-    for (const g of navigator.getGamepads?.() || []) {
-      if (!g) continue;
-      const axis = (v) => (Math.abs(v || 0) > 0.15 ? v : 0);
-      s += axis(g.axes[0]);
-      f -= axis(g.axes[1]);
-      this.rotate(axis(g.axes[2]) * dt * 650, axis(g.axes[3]) * dt * 650);
-      if (g.buttons[0]?.pressed && !this.gamePressed) this.interact();
-      this.gamePressed = g.buttons[0]?.pressed;
-      break;
+    if (!still) for (const b of a.blink) b.color.copy(b.userData.base).multiplyScalar(Math.sin(time * b.userData.rate + b.userData.phase) > -0.3 ? 1 : 0.1);
+    // Piano keys travel under the finger and spring back.
+    if (a.pianoKeys) for (const key of a.pianoKeys) {
+      const target = key.down ? 1 : 0;
+      if (Math.abs(target - key.depth) < 0.001) continue;
+      key.depth += (target - key.depth) * (1 - Math.exp(-dt * (target ? 60 : 24)));
+      this.scratchM.makeRotationX(key.depth * 0.022).setPosition(0, -key.depth * 0.012, 0);
+      key.mesh.setMatrixAt(key.index, this.scratchM.premultiply(key.matrix));
+      key.mesh.instanceMatrix.needsUpdate = true;
     }
-    this.smoothLook(dt);
-    const inputLength=Math.hypot(f,s);
-    if(inputLength>1){f/=inputLength;s/=inputLength;}
-    let vx = (-Math.sin(this.yaw) * f + Math.cos(this.yaw) * s) * this.speed,
-      vz = (-Math.cos(this.yaw) * f - Math.sin(this.yaw) * s) * this.speed;
-    if (this.walkTarget) {
-      const d = this.walkTarget.clone().sub(pos);
-      d.y = 0;
-      if (d.length() < 0.18) this.walkTarget = null;
-      else {
-        d.normalize();
-        vx = d.x * this.speed;
-        vz = d.z * this.speed;
-      }
+    if (t - (this.lastClock || 0) > 1000) {
+      this.lastClock = t;
+      const now = new Date(), s = now.getSeconds(), m = now.getMinutes() + s / 60, h = (now.getHours() % 12) + m / 60;
+      for (const c of a.clocks) { c.second.rotation.z = -(s / 60) * Math.PI * 2; c.minute.rotation.z = -(m / 60) * Math.PI * 2; c.hour.rotation.z = -(h / 12) * Math.PI * 2; }
     }
-    const factor = 1 - Math.exp(-dt * this.smoothing);
-    this.velocity.x += (vx - this.velocity.x) * factor;
-    this.velocity.y += (vz - this.velocity.y) * factor;
-    const nx = pos.x + this.velocity.x * dt,
-      nz = pos.z + this.velocity.y * dt;
-    if (this.architecture.canWalk(nx, pos.z)) pos.x = nx;
-    else this.walkTarget = null;
-    if (this.architecture.canWalk(pos.x, nz)) pos.z = nz;
-    else this.walkTarget = null;
-    this.setRoom(roomAt(pos.x, pos.z).id);
   }
   frame(t) {
-    const dt = Math.min(0.2, (t - this.last) / 1000);
+    const dt = Math.min(0.1, (t - this.last) / 1000);
     this.last = t;
-    this.arrival?.update(t);
     if (document.hidden) return;
-    const visibleWorld=this.mode==="house"&&!document.querySelector("dialog[open]");
-    if (
-      this.entered &&
-      this.mode === "house" &&
-      ![...document.querySelectorAll("dialog")].some((d) => d.open)
-    )
-      for (let elapsed = 0; elapsed < dt; elapsed += 0.025)
-        this.move(Math.min(0.025, dt - elapsed));
-    if(visibleWorld)this.architecture.updateDoors(this.camera.position, dt);
-    if(this.renderer && this.mode==="house" && !document.querySelector("dialog[open]")){
-      this.profileFrames++;
-      if(t-this.profileStart>1500){
-        this.fps=this.profileFrames*1000/(t-this.profileStart);this.profileFrames=0;this.profileStart=t;
-        const stats=this.renderer.info.render;$("#housePerformance").textContent=this.fps.toFixed(0)+" FPS · "+stats.calls+" draws · "+Math.round(stats.triangles/1000)+"k triangles · "+this.renderer.getPixelRatio().toFixed(2)+"× resolution";
+    const overlay = this.dialogs.some((d) => d.open);
+    if (overlay !== this.overlayOpen) { this.overlayOpen = overlay; document.body.classList.toggle("dialogOpen", overlay); if (overlay) this.interaction.set(null, null, null); }
+    const visible = this.mode === "house" && !overlay;
+    const e = this.studio.engine, bands = e.analysis(t);
+    if (this.arrival) this.arrival.update(dt);
+    if (visible && this.entered && !this.arrival) {
+      for (let elapsed = 0; elapsed < dt; elapsed += 0.02) {
+        const step = Math.min(0.02, dt - elapsed);
+        this.director.update(step);
+        this.player.update(step);
       }
-    }else {this.profileStart=t;this.profileFrames=0;}
-    if (t - this.lastAudio > 75 && (visibleWorld || $("#masterPanel").open)) {
-      this.lastAudio = t;
-      this.metrics = this.studio.engine.metrics();
-      if(visibleWorld)this.architecture.updateAudio(
-        this.metrics,
-        this.studio.engine.beat,
-        this.studio.engine.playing,
-      );
-      $("#housePlay").innerHTML = this.studio.engine.playing
-        ? "Ⅱ <span>Pause</span>"
-        : "▶ <span>Listen</span>";
-      const b = this.studio.engine.beat;
-      $("#housePosition").textContent =
-        String(Math.floor(b / 4) + 1).padStart(2, "0") +
-        " / " +
-        String(Math.floor(b % 4) + 1).padStart(2, "0");
-      if ($("#masterPanel").open) {
-        $("#listeningPeak").textContent = db(this.metrics.peak);
-        $("#listeningRms").textContent = db(this.metrics.rms);
-      }
-      if (!this.drag) this.findInteraction();
+      this.interaction.update(dt);
     }
-    if (visibleWorld && t - this.lastScreen > 600) {
-      this.lastScreen = t;
-      this.architecture.updateScreens(
-        this.studio.getProject(),
-        this.metrics,
-        this.recording,
-      );
+    if (t - this.lastMetrics > 75 && (visible || $("#masterPanel").open)) {
+      this.lastMetrics = t;
+      this.metrics = e.metrics();
+      this.hud.position();
+      if ($("#masterPanel").open) { $("#listeningPeak").textContent = db(this.metrics.peak); $("#listeningRms").textContent = db(this.metrics.rms); }
     }
-    if (this.mode === "house" && !document.querySelector("dialog[open]"))
-      this.renderer?.render(this.scene, this.camera);
+    if (!visible || !this.renderer) { this.performance.reset(t); this.performance.hold(1500); return; }
+    const a = this.architecture;
+    a.updateDoors(this.camera.position, dt, this.arrival ? this.arrival.door : null);
+    a.updatePads(e.playing && e.p ? e.p : this.studio.getProject(), e.beat, e.playing);
+    this.animate(dt, t, bands);
+    const position = this.camera.position;
+    for (const device of this.devices) {
+      const distance = device.focused ? 0 : device.group.getWorldPosition(this.scratch).distanceToSquared(position);
+      if (device.detail) device.detail.visible = distance < (device.detailReach || 42);
+      if (distance < (device.reach || 400)) device.update(dt, bands, t);
+    }
+    this.lighting.dimTarget = this.interaction.focused ? this.interaction.focused.dim ?? 0.55 : this.phone?.up || this.mentor?.visible ? 0.22 : 0;
+    this.lighting.apply(dt, bands, t);
+    this.screens.update(t);
+    if (this.arrival) this.arrival.render(this.renderer);
+    else if (this.finish) this.finish.render(this.scene, this.camera);
+    else this.renderer.render(this.scene, this.camera);
+    if (!this.arrival || this.arrival.veil < 0.5) this.performance.sample(t);
   }
   fallback() {
     this.renderer?.setAnimationLoop(null);
@@ -949,19 +811,21 @@ export class MusicHouse {
     this.entered = true;
     this.journey = null;
     this.resetNavigationInput();
-    $("#arrival").hidden = true;
+    $("#gate").hidden = true;
     $("#houseFallback").hidden = false;
-    this.production("arrange");
-    $("#houseModeButton").textContent = "Choose tools";
-    $("#returnHouse").textContent = "Choose another room";
-    document.body.classList.add("graphicsFallback");
+    document.body.classList.remove("booting");
+    document.body.classList.add("graphicsFallback", "entered");
+    this.mode = "production";
+    document.body.classList.remove("houseMode");
+    document.body.classList.add("productionMode");
+    this.studio.activate("arrange");
+    $("#returnHouse").textContent = "Commands";
     if (!this.fallbackFrame) {
       this.fallbackFrame = true;
-      const tick = (t) => {
-        this.frame(t);
-        requestAnimationFrame(tick);
-      };
+      const tick = (t) => { this.frame(t); requestAnimationFrame(tick); };
       requestAnimationFrame(tick);
     }
   }
 }
+MusicHouse.prototype.scratch = new THREE.Vector3();
+MusicHouse.prototype.scratchM = new THREE.Matrix4();

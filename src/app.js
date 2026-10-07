@@ -108,7 +108,7 @@ store.addEventListener("change", (e) => {
   ) {
     engine.p = p();
     engine.updateMix(p());
-  } else engine.refresh(p()).catch((e) => toast(e.message));
+  } else if (!window.aura?.playback?.foreign) engine.refresh(p()).catch((e) => toast(e.message));
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => persist().catch(() => {}), 600);
 });
@@ -297,7 +297,7 @@ function drawTimeline() {
   ];
   for (const [name, b] of sections) {
     if (b >= beats) continue;
-    ctx.fillStyle = b === 0 ? "#aaa7ff13" : "#1b1c26";
+    ctx.fillStyle = b === 0 ? "#ff5a2613" : "#1b1c26";
     ctx.fillRect(
       b * zoom,
       26,
@@ -312,7 +312,7 @@ function drawTimeline() {
     const t = p().tracks[i],
       y = 48 + i * 65;
     ctx.fillStyle =
-      t.id === selectedTrack ? "#aaa7ff03" : i % 2 ? "#ffffff01" : "#0000";
+      t.id === selectedTrack ? "#ff5a2603" : i % 2 ? "#ffffff01" : "#0000";
     ctx.fillRect(0, y, w, 65);
     ctx.strokeStyle = "#252630";
     ctx.beginPath();
@@ -525,10 +525,10 @@ function duplicateClip() {
   commit("Duplicate clip", () => track().clips.push(nc));
   select(selectedTrack, nc.id);
 }
-function splitClip() {
+function splitClip(atBeat = engine.beat) {
   const c = clip();
   if (!c) return;
-  const at = quant(engine.beat) - c.start;
+  const at = quant(atBeat) - c.start;
   if (at <= 0 || at >= c.length)
     return toast("Seek inside the selected clip, then split.");
   commit("Split clip", () => {
@@ -569,6 +569,26 @@ function removeSelection() {
       "Delete clip",
       () => (track().clips = track().clips.filter((x) => x.id !== c.id)),
     );
+}
+function quantizeClip() {
+  const c = clip();
+  if (!c || !c.notes.length) return toast("Select a clip with notes to quantize.");
+  commit("Quantize notes", () =>
+    c.notes.forEach((n) => {
+      n.start = Math.min(c.length - 0.25, Math.round(n.start * 4) / 4);
+      n.duration = Math.max(0.25, Math.round(n.duration * 4) / 4);
+    }),
+  );
+}
+function humanizeClip(amount = 1) {
+  const c = clip();
+  if (!c || !c.notes.length) return toast("Select a clip with notes to humanize.");
+  commit("Humanize notes", () =>
+    c.notes.forEach((n, i) => {
+      n.start = Math.min(Math.max(0, c.length - n.duration), Math.max(0, n.start + Math.sin(i * 8.13) * 0.025 * amount));
+      n.velocity = Math.min(1, Math.max(0.05, n.velocity + Math.cos(i * 3.37) * 0.05 * amount));
+    }),
+  );
 }
 function renderEditor() {
   $$("[data-tab]").forEach((b) =>
@@ -684,7 +704,7 @@ function drawPiano() {
   for (let i = 0; i < 25; i++) {
     const n = pianoTop() - i,
       y = i * 15;
-    ctx.fillStyle = inScale(n, p()) ? "#aaa7ff07" : "#090a1040";
+    ctx.fillStyle = inScale(n, p()) ? "#ff5a2607" : "#090a1040";
     ctx.fillRect(0, y, w, 15);
     ctx.strokeStyle = n % 12 === 0 ? "#41414f" : "#2a2c37";
     ctx.beginPath();
@@ -1403,11 +1423,14 @@ async function importAudio(file) {
     for (let k = a; k < b; k++) max = Math.max(max, Math.abs(data[k]));
     peaks.push(max);
   }
+  // A sample cut to the bar comes back a few samples short after decoding; it still sits on the grid.
+  const beats = (buffer.duration * p().bpm) / 60,
+    onGrid = Math.round(beats * 4) / 4;
   const t = makeTrack("audio", p().tracks.length),
     c = makeClip(
       file.name.replace(/\.[^.]+$/, ""),
       0,
-      Math.max(0.25, Math.min(256, (buffer.duration * p().bpm) / 60)),
+      Math.max(0.25, Math.min(256, Math.abs(beats - onGrid) < 0.01 ? onGrid : beats)),
     );
   t.name = c.name;
   t.clips = [{ ...c, asset: id, offset: 0 }];
@@ -1491,7 +1514,7 @@ const commands = [
   ["Add drum machine", "", () => addInstrument("drums")],
   ["Import audio", "", () => $("#audioFile").click()],
   ["Duplicate clip", "Ctrl D", duplicateClip],
-  ["Split clip at playhead", "", splitClip],
+  ["Split clip at playhead", "", () => splitClip()],
   [
     "Open piano roll",
     "",
@@ -1571,9 +1594,14 @@ function openCommand() {
   $("#commandSearch").focus();
 }
 async function togglePlay() {
+  const playback = window.aura?.playback;
   if (engine.playing) {
     engine.pause();
     if (proposal) proposal.preview = false;
+  } else if (playback) {
+    // In the precise editor, Play always means the open project.
+    if (document.body.classList.contains("productionMode")) playback.select("project", false);
+    await playback.play();
   } else await engine.play(p());
   updateTransport();
 }
@@ -1642,7 +1670,7 @@ function animate(now) {
         2 ** ((i / 39) * Math.log2(Math.max(2, bins.length - 1))),
       ),
       v = bins[idx] || 0;
-    ctx.fillStyle = i < 20 ? "#9d9bff70" : "#69d6be70";
+    ctx.fillStyle = i < 20 ? "#efe7d870" : "#e8c58c70";
     ctx.fillRect(i * 3.7, 40 - (v / 255) * 36, 2, Math.max(1, (v / 255) * 36));
   }
   if (tab === "map") drawMap(m);
@@ -1751,7 +1779,7 @@ $("#timelineViewport").ondrop = safe(async (e) => {
 });
 $("#exportButton").onclick = safe(exportAudio);
 $("#duplicate").onclick = duplicateClip;
-$("#split").onclick = splitClip;
+$("#split").onclick = () => splitClip();
 $("#deleteClip").onclick = removeSelection;
 $("#snap").onclick = () => {
   snap = !snap;
@@ -1803,7 +1831,10 @@ $("#soundSearch").oninput = renderLibrary;
 $("#commandButton").onclick = openCommand;
 $("#commandSearch").oninput = renderCommands;
 $("#commandSearch").onkeydown = (e) => {
-  if (e.key === "Enter") $("#commandResults button")?.click();
+  if (e.key !== "Enter") return;
+  // Without this the same key press goes on to press the first button of whatever sheet the command opened.
+  e.preventDefault();
+  $("#commandResults button")?.click();
 };
 $("#settingsButton").onclick = () => {
   $("#introSetting").checked = localStorage.getItem("aura-intro") !== "off";
@@ -1927,13 +1958,6 @@ document.addEventListener("visibilitychange", () => {
     toast("Playback paused while the studio is in the background.");
   }
 });
-$("#skipIntro").onclick = () => $("#intro").classList.add("hidden");
-if (
-  localStorage.getItem("aura-intro") === "off" ||
-  matchMedia("(prefers-reduced-motion: reduce)").matches
-)
-  $("#intro").classList.add("hidden");
-else setTimeout(() => $("#intro").classList.add("hidden"), 3300);
 document.body.classList.toggle(
   "oled",
   localStorage.getItem("aura-oled") === "true",
@@ -1989,7 +2013,15 @@ export const studio = {
   getProject: p,
   getTrack: track,
   getClip: clip,
+  getNote: () => selectedNote,
   select,
+  duplicateClip,
+  splitClip,
+  removeSelection,
+  quantizeClip,
+  humanizeClip,
+  toggleTrack,
+  togglePlay,
   addInstrument,
   render,
   persist,

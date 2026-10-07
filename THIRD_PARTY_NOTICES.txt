@@ -23,6 +23,16 @@ THE SOFTWARE.
 The above license applies to the bundled Three.js library and its addons.
 The AURA application also uses esbuild (MIT) as a build-time dependency.
 
+Typefaces in assets/fonts, each under the SIL Open Font License, Version 1.1.
+The full license accompanies each family in that folder:
+Bricolage Grotesque — Copyright 2022 The Bricolage Grotesque Project Authors
+(https://github.com/ateliertriay/bricolage). See assets/fonts/OFL-bricolage-grotesque.txt.
+Instrument Serif — Copyright 2022 The Instrument Serif Project Authors
+(https://github.com/Instrument/instrument-serif). See assets/fonts/OFL-instrument-serif.txt.
+DM Mono — Copyright 2020 The DM Mono Project Authors
+(https://www.github.com/googlefonts/dm-mono). See assets/fonts/OFL-dm-mono.txt.
+The WOFF2 files in that folder are also embedded in the portable AURA.html.
+
 AURA 0.4 user-supplied 3D assets:
 modern-house-villa-game-ready-4k.zip; chairs-and-window-set-game-ready.zip;
 japroom-14-otaku.zip; the-interior-14-is-spacious.zip; loft2-free-interior.zip.

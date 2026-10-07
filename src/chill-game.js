@@ -41,7 +41,10 @@ export class ChillGame {
   open(){openActivity(this.dialog,this.house);this.dialog.scrollTop=0;this.updateHud();this.draw();this.canvas.focus({preventScroll:true});}
   toggle(){if(this.running)return this.pause();this.running=true;this.last=performance.now();this.dialog.querySelector('#gameStart').textContent='Pause game';this.canvas.focus();this.raf=requestAnimationFrame(t=>this.frame(t));}
   pause(){this.running=false;this.keys.clear();cancelAnimationFrame(this.raf);this.dialog.querySelector('#gameStart').textContent=this.state.score?'Resume game':'Play game';this.draw();}
-  frame(t){if(!this.running||!this.dialog.open)return;const dt=(t-this.last)/1000;this.last=t;let direction=Number(this.keys.has('ArrowRight'))-Number(this.keys.has('ArrowLeft'));
+  /** The same game, shown on the living-room wall instead of in a sheet. */
+  enterWorld(){this.inWorld=true;this.draw();}
+  leaveWorld(){this.inWorld=false;this.pause();}
+  frame(t){if(!this.running||!(this.dialog.open||this.inWorld))return;const dt=(t-this.last)/1000;this.last=t;let direction=Number(this.keys.has('ArrowRight'))-Number(this.keys.has('ArrowLeft'));
     // Gamepad input belongs only to the focused game, never to the house camera.
     for(const g of navigator.getGamepads?.()||[]){if(g?.connected){const x=g.axes[0]||0;if(Math.abs(x)>.15)direction=x;direction+=(g.buttons[15]?.pressed?1:0)-(g.buttons[14]?.pressed?1:0);break;}}
     this.state.step(dt,Math.max(-1,Math.min(1,direction)));this.draw();if(t-this.lastHud>150){this.lastHud=t;this.updateHud();}this.raf=requestAnimationFrame(v=>this.frame(v));

@@ -3,19 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <meta name="theme-color" content="#101116" />
+    <meta name="theme-color" content="#0c0b0a" />
     <meta
       name="description"
-      content="AURA — an independent music workstation. Compose, arrange, mix and export with a real local audio engine."
+      content="AURA Music House — a spatial music experience. Walk through a house where every room is part of making a track."
     />
-    <title>AURA · The Music House</title>
+    <title>AURA — Music House</title>
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='none' stroke='%239d9bff' stroke-width='3' d='M5 26L16 5l11 21M10 18h12'/%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230c0b0a'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23efe7d8' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='16' r='3.4' fill='%23ff5a26'/%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="src/style.css" />
     <link rel="stylesheet" href="src/house.css" />
     <link rel="stylesheet" href="src/activities.css" />
+    <link rel="stylesheet" href="src/aura.css" />
+    <link rel="preload" href="assets/fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="assets/fonts/dm-mono-500.woff2" as="font" type="font/woff2" crossorigin />
     <script type="importmap">
       {
         "imports": {
@@ -25,57 +28,25 @@
       }
     </script>
   </head>
-  <body class="houseMode">
+  <body class="houseMode booting">
     <div id="houseWorld">
       <canvas
         id="world"
         tabindex="0"
-        aria-label="The Music House. Use the thumb control or WASD and arrow keys to walk. Drag the scene to look, tap an object or press E to interact."
+        aria-label="The AURA music house. Walk with W A S D, look with the mouse, press E to use what you are looking at, Tab for the phone."
       ></canvas>
     </div>
+    <div id="vignette" aria-hidden="true"></div>
     <div id="houseHud">
-      <div class="houseTop">
-        <button id="houseBrand" class="houseBrand" aria-label="Entry gallery">
-          A U R A <span>THE MUSIC HOUSE</span>
-        </button>
-        <div class="houseTopRight">
-          <span id="houseProject">After the blue hour</span
-          ><button id="houseMapButton">Rooms <kbd>M</kbd></button
-          ><button id="houseSettingsButton" aria-label="House settings">
-            ◌</button
-          ><button id="houseModeButton">Production view <kbd>Ctrl ↵</kbd></button>
-        </div>
-      </div>
-      <div class="roomEditorial">
-        <span id="roomEyebrow">A PLACE FOR YOUR NEXT IDEA</span>
-        <h1 id="roomTitle">Entry gallery.</h1>
-        <p id="roomDescription">Every piece begins with an empty frame.</p>
-        <button id="roomWorkButton">
-          Open the project gallery <span>↗</span>
-        </button>
-      </div>
-      <div id="interactionHint" hidden>
-        <span id="interactionName"></span
-        ><button id="interactButton">Interact <kbd>E</kbd></button>
-      </div>
-      <div class="houseBottom">
-        <div>
-          <button id="housePlay" aria-label="Play project">
-            ▶ <span>Listen</span></button
-          ><button id="houseStop" aria-label="Stop project">■</button
-          ><span id="houseBpm">112 BPM</span
-          ><span id="housePosition">01 / 01</span
-          ><span class="monitorStatus">REFERENCE MONITORING</span>
-        </div>
-        <div class="movementHint">
-          W A S D <span>walk</span> DRAG <span>look</span
-          ><button id="houseLock">Mouse look</button
-          ><button id="houseCommand">Commands <kbd>⌘ K</kbd></button>
-        </div>
-      </div>
+      <button id="auraMark" class="auraMark" aria-label="Open the phone"><i></i></button>
+      <div id="reticle" aria-hidden="true"></div>
+      <div id="prompt" role="status"><kbd id="promptKey">E</kbd><b id="promptVerb"></b><span id="promptLabel"></span></div>
+      <button id="nowLine" class="nowLine" aria-label="Play or pause"><i></i><span id="nowTitle"></span><em id="nowMeta"></em></button>
+      <div id="hint" class="hint" aria-hidden="true"></div>
+      <div id="lockHint" aria-hidden="true">CLICK TO LOOK AROUND</div>
       <div id="recordIndicator" hidden>
         <span></span><b>RECORDING</b><output id="recordSeconds">0:00</output
-        ><button id="quickRecordStop">Stop take</button>
+        ><button id="quickRecordStop">STOP TAKE</button>
       </div>
       <div id="touchNavigation" class="touchNavigation" hidden>
         <div class="touchMove">
@@ -89,97 +60,56 @@
           </button>
         </div>
         <div class="touchLook">
-          <p id="touchMoveHelp">Hold the circle to walk.<br>Drag the scene to look.</p>
-          <button id="touchInteract" type="button">Interact ↗</button>
+          <p id="touchMoveHelp">HOLD TO WALK<br />DRAG THE VIEW TO LOOK</p>
+          <button id="touchInteract" type="button">USE</button>
         </div>
       </div>
     </div>
-    <div id="arrival">
-      <span class="arrivalEyebrow">AN INDEPENDENT PLACE FOR MAKING MUSIC</span>
-      <h1>Some ideas<br />need a place.</h1>
-      <p>A private house for your next sound.</p>
-      <div>
-        <button id="enterHouse">Enter the house <span>↗</span></button
-        ><button id="skipArrival">Skip arrival</button>
+    <div id="moment" aria-hidden="true">
+      <div class="momentEyebrow"></div>
+      <div class="momentTitle"></div>
+      <div class="momentSub"></div>
+    </div>
+    <div id="wipe" aria-hidden="true"></div>
+    <div id="speech">
+      <div id="speechFrom">AURA</div>
+      <div id="speechLine" role="status" aria-live="polite"></div>
+      <div id="speechChips"></div>
+      <form id="askForm" autocomplete="off">
+        <label for="askInput">ASK AURA</label>
+        <input id="askInput" maxlength="400" placeholder="Why does my mix sound muddy?" />
+        <kbd>ENTER ↵ · ESC</kbd>
+      </form>
+    </div>
+    <div id="phone" aria-label="AURA phone"></div>
+    <div id="gate">
+      <div class="gateMark"><i></i></div>
+      <div class="gateWord">AURA</div>
+      <p class="gateSub">A SPATIAL MUSIC EXPERIENCE</p>
+      <div class="gateActions">
+        <button id="enterHouse">BEGIN</button>
+        <button id="skipArrival">SKIP THE ARRIVAL</button>
       </div>
-      <label
-        ><input id="arrivalSound" type="checkbox" /> A note on arrival</label
-      ><small>Tap Listen inside the house to start the music.</small>
+      <label><input id="arrivalSound" type="checkbox" checked /> SOUND</label>
+      <small id="gateStatus">HEADPHONES RECOMMENDED</small>
+    </div>
+    <div id="cinema" hidden>
+      <div class="cinemaWord"><b>AURA</b><span>A SPATIAL MUSIC EXPERIENCE</span></div>
+      <div class="cinemaTitle"><span>Aura</span><span>Music</span><span>House</span></div>
+      <button class="cinemaEnter" id="cinemaEnter">[ <i>●</i> ENTER ]</button>
+      <div class="cinemaMeta">THE HOUSE IS THE INSTRUMENT<br />NINE ROOMS · ONE PROJECT</div>
+      <button class="cinemaSkip" id="cinemaSkip">SKIP · ESC</button>
     </div>
     <div id="houseFallback" hidden>
-      3D is unavailable. Your music tools are still available.
+      3D is unavailable on this device — every music tool is here
     </div>
-    <dialog id="roomMap">
-      <div class="houseDialogHead">
-        <span>THE HOUSE / SPATIAL INDEX</span
-        ><button data-house-close="roomMap" aria-label="Close room map">
-          ×
-        </button>
-      </div>
-      <h2>A room for every part of the process.</h2>
-      <div id="roomGrid"></div>
-      <button id="mapMemory" class="housePrimary">
-        Musical memory · keep a version ↗
-      </button>
-      <p>
-        Number keys 1–9 walk to a room. Hold Shift with a number or room click
-        to jump there instantly. Ctrl Enter switches views. Tab moves between controls.
-      </p>
-    </dialog>
-    <dialog id="houseSettings">
-      <div class="houseDialogHead">
-        <span>COMFORT & PERFORMANCE</span
-        ><button
-          data-house-close="houseSettings"
-          aria-label="Close house settings"
-        >
-          ×
-        </button>
-      </div>
-      <h2>Your pace. Your space.</h2>
-      <label class="houseSetting"
-        ><span
-          >Graphics quality<small
-            >Music tools are identical in every mode.</small
-          ></span
-        ><select id="graphicsQuality">
-          <option value="balanced">Balanced</option>
-          <option value="full">Full experience</option>
-          <option value="performance">Performance</option>
-        </select></label
-      ><label class="houseSetting"
-        ><span
-          >Reduced motion<small
-            >Immediate room changes, no kinetic art.</small
-          ></span
-        ><input id="houseReduced" type="checkbox" /></label
-      ><label class="houseSetting"
-        ><span>Cinematic arrival<small>Always skippable.</small></span
-        ><input id="houseArrivalSetting" type="checkbox" /></label
-      ><label class="houseSetting"
-        ><span>Movement speed</span
-        ><input
-          id="walkSpeed"
-          type="range"
-          min="1.5"
-          max="6"
-          step=".25"
-          value="3.3"
-      /></label>
-      <div id="houseSoundHelp">
-        Tap Listen to enable sound. If an older iPhone stays silent, turn off
-        Silent Mode and check your media volume. After a call or switching apps,
-        tap Listen again to resume.
-      </div>
-    <p id="housePerformance" class="houseNote">Measuring graphics…</p><label class="houseSetting"><span>Arrival length</span><select id="arrivalDuration"><option value="full">Cinematic · 8 seconds</option><option value="short">Short · 3 seconds</option></select></label>
-<label class="houseSetting"><span>Look sensitivity</span><input id="lookSensitivity" type="range" min=".0008" max=".006" step=".0001"></label>
-<label class="houseSetting"><span>Movement response</span><input id="movementSmoothing" type="range" min="3" max="20" step="1"></label>
-<label class="houseSetting"><span>Field of view</span><input id="fieldOfView" type="range" min="45" max="90" step="1"></label>
-</dialog>
+    <div id="productionTop"><b>AURA</b><span id="productionRoomName">THE PRECISE EDITOR</span></div>
+    <div class="houseTopRight" hidden></div>
+    <dialog id="roomMap"><div id="roomGrid"></div></dialog>
     <dialog id="ideaPanel">
       <div class="houseDialogHead">
-        <span>THE IDEA ROOM</span
-        ><button data-house-close="ideaPanel" aria-label="Close idea room">
+        <span>THE AURA LAB</span
+        ><button data-house-close="ideaPanel" aria-label="Close the AURA lab">
           ×
         </button>
       </div>
@@ -203,10 +133,10 @@
     </dialog>
     <dialog id="recordPanel">
       <div class="houseDialogHead">
-        <span>THE RECORDING ROOM / REAL INPUT</span
+        <span>THE VOCAL ROOM / REAL INPUT</span
         ><button
           data-house-close="recordPanel"
-          aria-label="Close recording room"
+          aria-label="Close the vocal room"
         >
           ×
         </button>
@@ -247,10 +177,10 @@
     </dialog>
     <dialog id="masterPanel">
       <div class="houseDialogHead">
-        <span>THE LISTENING ROOM / REFERENCE</span
+        <span>THE MIXING ROOM / REFERENCE</span
         ><button
           data-house-close="masterPanel"
-          aria-label="Close listening room"
+          aria-label="Close the mixing room"
         >
           ×
         </button>
@@ -288,10 +218,10 @@
     </dialog>
     <dialog id="exportPanel">
       <div class="houseDialogHead">
-        <span>THE EXPORT TERRACE</span
+        <span>THE TERRACE</span
         ><button
           data-house-close="exportPanel"
-          aria-label="Close export terrace"
+          aria-label="Close the terrace"
         >
           ×
         </button>
@@ -335,26 +265,14 @@
       <div id="memoryList"></div>
     </dialog>
     <div id="productionRoomLabel">
-      <span id="productionRoomName">INSTRUMENT GALLERY</span
-      ><button id="returnHouse">Return to the house <kbd>Ctrl ↵</kbd></button>
+      <button id="returnHouse">← Back to the house <kbd>Ctrl ↵</kbd></button>
     </div>
 
-    <div id="intro" class="intro">
-      <div class="orb">
-        <div class="orbit o1"></div>
-        <div class="orbit o2"></div>
-        <div class="orbit o3"></div>
-        <div class="intro-wave"></div>
-      </div>
-      <div class="intro-word">AURA</div>
-      <p>MAKE ROOM FOR YOUR SOUND</p>
-      <button id="skipIntro">Enter studio <span>↗</span></button>
-    </div>
     <div class="app">
       <header class="menubar">
         <button class="brand" id="hubButton" title="Projects">
           <svg viewBox="0 0 30 30"><path d="M4 25 15 4l11 21M9 18h12" /></svg
-          >AURA<span class="version">/ 04.0</span></button
+          >AURA<span class="version">/ 05</span></button
         ><span class="menudiv"></span><button id="fileButton">Projects</button
         ><button id="saveButton">Save</button
         ><button id="undo" title="Undo · Ctrl Z">Undo</button

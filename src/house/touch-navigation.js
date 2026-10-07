@@ -31,8 +31,12 @@ export class TouchNavigation {
       });
     }
     this.pad.addEventListener('contextmenu', event => event.preventDefault());
-    document.querySelector('#touchInteract').addEventListener('click', () => {
+    const interact = document.querySelector('#touchInteract');
+    for (const name of ['focus', 'blur']) house.events.addEventListener(name, () => { interact.textContent = house.interaction.focused ? 'BACK' : 'USE'; });
+    interact.addEventListener('click', () => {
       if (!this.available()) return;
+      // At an instrument the hands are on its controls; the one button left is the way back out.
+      if (this.house.interaction.focused) return this.house.blur();
       this.house.pointer.set(0, 0);
       this.house.camera.updateMatrixWorld();
       this.house.findInteraction();

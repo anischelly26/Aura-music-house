@@ -16,7 +16,7 @@ await build({
 });
 let html = await readFile("index.html", "utf8");
 const revision = createHash('sha256');
-for (const file of ['dist/studio.js','src/style.css','src/house.css','src/activities.css']) revision.update(await readFile(file));
+for (const file of ['dist/studio.js','src/style.css','src/house.css','src/activities.css','src/aura.css']) revision.update(await readFile(file));
 const assetVersion = revision.digest('hex').slice(0,12);
 html = html
   .replace(/<script type="importmap">[\s\S]*?<\/script>/, "")
@@ -24,7 +24,7 @@ html = html
     '<script type="module" src="src/main.js"></script>',
     '<script src="studio.js?v=' + assetVersion + '"></script>',
   )
-  .replace(/href="(src\/(?:style|house|activities)\.css)"/g, 'href="$1?v=' + assetVersion + '"');
+  .replace(/href="(src\/(?:style|house|activities|aura)\.css)"/g, 'href="$1?v=' + assetVersion + '"');
 await writeFile("dist/index.html", html);
 await import("./bundle.mjs");
 console.log("Built the music house into dist/");
